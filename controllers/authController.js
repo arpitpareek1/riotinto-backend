@@ -1,17 +1,11 @@
-// import userModel from "../models/userModel.js";
 const userModel=require('../models/userModel.js')
-// import orderModel from "../models/orderModel.js";
 const orderModel=require('../models/orderModel.js')
 const {comparePassword,hashPassword}=require('../helpers/authHelper.js');
-// const hashPassword=require('../helpers/authHelper.js');
-
-// import { comparePassword, hashPassword } from "../helpers/authHelper.js";
-// import JWT from "jsonwebtoken";
 const JWT=require('jsonwebtoken')
 
 const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone, address, answer } = req.body;
+    const { name, email, password, phone, address } = req.body;
     //validations
     if (!name) {
       return res.send({ error: "Name is Required" });
@@ -27,9 +21,6 @@ const registerController = async (req, res) => {
     }
     if (!address) {
       return res.send({ message: "Address is Required" });
-    }
-    if (!answer) {
-      return res.send({ message: "Answer is Required" });
     }
     //check user
     const exisitingUser = await userModel.findOne({ email });
@@ -49,7 +40,6 @@ const registerController = async (req, res) => {
       phone,
       address,
       password: hashedPassword,
-      answer,
     }).save();
 
     res.status(201).send({
