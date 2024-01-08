@@ -4,8 +4,8 @@
   "description": "ecommerce rest api",
   "main": "server.js",
   "scripts": {
-    "start": "nodemon server.js",
-    "server": "nodemon server.js",
+    "start": "nodemon app.js",
+    "server": "nodemon app.js",
     "client": "npm start --prefix ./client",
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
@@ -14,7 +14,7 @@
   "license": "MIT",
   "dependencies": {
     "@sendgrid/mail": "^7.7.0",
-    "bcrypt": "^5.1.0",
+    "bcrypt": "^5.1.1",
     "braintree": "^3.13.0",
     "colors": "^1.4.0",
     "concurrently": "^7.6.0",
@@ -27,6 +27,8 @@
     "morgan": "^1.10.0",
     "nodemon": "^2.0.20",
     "react-icons": "^4.7.1",
-    "slugify": "^1.6.5"
+    "shortid": "^2.2.16",
+    "slugify": "^1.6.5",
+    "twilio": "^5.0.0-rc.1"
   }
 }

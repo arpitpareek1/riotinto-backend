@@ -1,12 +1,17 @@
-const userModel=require('../models/userModel.js')
-const orderModel=require('../models/orderModel.js')
-const {comparePassword,hashPassword}=require('../helpers/authHelper.js');
-const JWT=require('jsonwebtoken')
+const userModel = require("../models/userModel.js");
+const orderModel = require("../models/orderModel.js");
+const shortid = require("shortid");
+const {
+  comparePassword,
+  hashPassword,
+  generateOTP,
+} = require("../helpers/authHelper.js");
+const twilio = require("twilio");
+const JWT = require("jsonwebtoken");
 
 const registerController = async (req, res) => {
   try {
-    const { name, email, password, phone, address } = req.body;
-    //validations
+    const { name, email, password, phone, address, userReferCode } = req.body;
     if (!name) {
       return res.send({ error: "Name is Required" });
     }
@@ -19,42 +24,74 @@ const registerController = async (req, res) => {
     if (!phone) {
       return res.send({ message: "Phone no is Required" });
     }
-    if (!address) {
-      return res.send({ message: "Address is Required" });
-    }
-    //check user
-    const exisitingUser = await userModel.findOne({ email });
-    //exisiting user
-    if (exisitingUser) {
-      return res.status(200).send({
-        success: false,
-        message: "Already Register please login",
+   
+    if (await userModel.findOne({ email: email })) {
+      res.status(202).json({
+        status: false,
+        massage: "Email already exits!!!",
       });
     }
-    //register user
-    const hashedPassword = await hashPassword(password);
-    //save
-    const user = await new userModel({
+
+    let referredByUser = null;
+
+    if (userReferCode) {
+      referredByUser = await userModel.findOne({ referralCode: userReferCode });
+      if (referredByUser) {
+        updateUserMoney(referredByUser.email);
+      }
+    }
+
+    const newUser = new userModel({
       name,
       email,
+      password: password,
       phone,
       address,
-      password: hashedPassword,
-    }).save();
-
-    res.status(201).send({
-      success: true,
-      message: "User Register Successfully",
-      user,
+      money: 100,
+      referredBy: referredByUser ? referredByUser._id : null,
+      referralCode: shortid.generate(),
+      userReferCode,
     });
+
+    const savedUser = await newUser.save();
+
+    res.status(201).json({
+      message: "User created successfully",
+      user: savedUser,
+    });
+
   } catch (error) {
-    console.log(error);
-    res.status(500).send({
-      success: false,
-      message: "Errro in Registeration",
-      error,
+    console.error(error);
+    res.status(500).json({
+      status: false,
+      massage: "Something went wrong while sign up",
     });
   }
+};
+
+const updateUserMoney = async (UserEmail, newMoneyValue = undefined) => {
+  referredByUser = await userModel.findOne({ email: UserEmail });
+  console.log("referredByUser.isRefered", typeof referredByUser.isRefered, referredByUser.isRefered);
+  const newMoney =
+    +referredByUser.money +
+    (newMoneyValue ? newMoneyValue : referredByUser.isRefered ? 50 : 100);
+  console.log(newMoney);
+  userModel.updateOne(
+    { email: UserEmail },
+    {
+      $set: {
+        money: newMoney,
+        isRefered: true,
+      },
+    },
+    (err, result) => {
+      if (err) {
+        console.error(err);
+      } else {
+        console.log(`Money updated successfully for user with ID`, result);
+      }
+    }
+  );
 };
 
 //POST LOGIN
@@ -90,14 +127,7 @@ const loginController = async (req, res) => {
     res.status(200).send({
       success: true,
       message: "login successfully",
-      user: {
-        _id: user._id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        address: user.address,
-        role: user.role,
-      },
+      user: user,
       token,
     });
   } catch (error) {
@@ -111,7 +141,6 @@ const loginController = async (req, res) => {
 };
 
 //forgotPasswordController
-
 const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
@@ -146,16 +175,6 @@ const forgotPasswordController = async (req, res) => {
       message: "Something went wrong",
       error,
     });
-  }
-};
-
-//test controller
-const testController = (req, res) => {
-  try {
-    res.send("Protected Routes");
-  } catch (error) {
-    console.log(error);
-    res.send({ error });
   }
 };
 
@@ -250,4 +269,41 @@ const orderStatusController = async (req, res) => {
     });
   }
 };
-module.exports={registerController,loginController,forgotPasswordController,orderStatusController,getAllOrdersController,getOrdersController,updateProfileController,testController}
+
+const sendOtp = async (req, res) => {
+  const accountSid = "AC83f3835404f95ea8eea0b1cf3031c06a";
+  const authToken = "3d3ac7c3ee187bf8467af66e1b8c6f1a";
+  const client = new twilio(accountSid, authToken);
+  const phoneNumber = req.body.phoneNumber;
+  const otp = generateOTP();
+  client.messages
+    .create({
+      body: `\n\nYour OTP for Riotinto signup is  ${otp}`,
+      to: "+91" + phoneNumber,
+      from: "+17179644830",
+    })
+    .then((message) => {
+      res.send({
+        status: true,
+        data: otp,
+      });
+    })
+    .catch((error) => {
+      console.error(error);
+      res.status(500).send({
+        status: false,
+        data: "Failed to send OTP!!!",
+      });
+    });
+};
+
+module.exports = {
+  sendOtp,
+  registerController,
+  loginController,
+  forgotPasswordController,
+  orderStatusController,
+  getAllOrdersController,
+  getOrdersController,
+  updateProfileController,
+};

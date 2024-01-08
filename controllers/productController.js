@@ -1,6 +1,6 @@
-const productModel =require("../models/productModel.js");
-const categoryModel =require("../models/categoryModel.js");
-const orderModel =require("../models/orderModel.js");
+const productModel = require("../models/productModel.js");
+const categoryModel = require("../models/categoryModel.js");
+const orderModel = require("../models/orderModel.js");
 
 const fs = require("fs");
 const slugify = require("slugify");
@@ -17,7 +17,7 @@ var gateway = new braintree.BraintreeGateway({
   privateKey: process.env.BRAINTREE_PRIVATE_KEY,
 });
 
- const createProductController = async (req, res) => {
+const createProductController = async (req, res) => {
   try {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
@@ -32,19 +32,13 @@ var gateway = new braintree.BraintreeGateway({
         return res.status(500).send({ error: "Price is Required" });
       case !category:
         return res.status(500).send({ error: "Category is Required" });
-      case !quantity:
-        return res.status(500).send({ error: "Quantity is Required" });
-      case photo && photo.size > 1000000:
-        return res
-          .status(500)
-          .send({ error: "photo is Required and should be less then 1mb" });
     }
 
     const products = new productModel({ ...req.fields, slug: slugify(name) });
-    if (photo) {
-      products.photo.data = fs.readFileSync(photo.path);
-      products.photo.contentType = photo.type;
-    }
+    // if (photo) {
+    //   products.photo.data = fs.readFileSync(photo.path);
+    //   products.photo.contentType = photo.type;
+    // }
     await products.save();
     res.status(201).send({
       success: true,
@@ -62,7 +56,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 //get all products
- const getProductController = async (req, res) => {
+const getProductController = async (req, res) => {
   try {
     const products = await productModel
       .find({})
@@ -86,7 +80,7 @@ var gateway = new braintree.BraintreeGateway({
   }
 };
 // get single product
- const getSingleProductController = async (req, res) => {
+const getSingleProductController = async (req, res) => {
   try {
     const product = await productModel
       .findOne({ slug: req.params.slug })
@@ -108,7 +102,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // get photo
- const productPhotoController = async (req, res) => {
+const productPhotoController = async (req, res) => {
   try {
     const product = await productModel.findById(req.params.pid).select("photo");
     if (product.photo.data) {
@@ -126,7 +120,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 //delete controller
- const deleteProductController = async (req, res) => {
+const deleteProductController = async (req, res) => {
   try {
     await productModel.findByIdAndDelete(req.params.pid).select("-photo");
     res.status(200).send({
@@ -144,7 +138,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 //upate producta
- const updateProductController = async (req, res) => {
+const updateProductController = async (req, res) => {
   try {
     const { name, description, price, category, quantity, shipping } =
       req.fields;
@@ -193,7 +187,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // filters
- const productFiltersController = async (req, res) => {
+const productFiltersController = async (req, res) => {
   try {
     const { checked, radio } = req.body;
     let args = {};
@@ -215,7 +209,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // product count
- const productCountController = async (req, res) => {
+const productCountController = async (req, res) => {
   try {
     const total = await productModel.find({}).estimatedDocumentCount();
     res.status(200).send({
@@ -233,7 +227,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // product list base on page
- const productListController = async (req, res) => {
+const productListController = async (req, res) => {
   try {
     const perPage = 6;
     const page = req.params.page ? req.params.page : 1;
@@ -258,7 +252,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // search product
- const searchProductController = async (req, res) => {
+const searchProductController = async (req, res) => {
   try {
     const { keyword } = req.params;
     const resutls = await productModel
@@ -281,7 +275,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // similar products
- const realtedProductController = async (req, res) => {
+const realtedProductController = async (req, res) => {
   try {
     const { pid, cid } = req.params;
     const products = await productModel
@@ -307,7 +301,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 // get prdocyst by catgory
- const productCategoryController = async (req, res) => {
+const productCategoryController = async (req, res) => {
   try {
     const category = await categoryModel.findOne({ slug: req.params.slug });
     const products = await productModel.find({ category }).populate("category");
@@ -328,7 +322,7 @@ var gateway = new braintree.BraintreeGateway({
 
 //payment gateway api
 //token
- const braintreeTokenController = async (req, res) => {
+const braintreeTokenController = async (req, res) => {
   try {
     gateway.clientToken.generate({}, function (err, response) {
       if (err) {
@@ -343,7 +337,7 @@ var gateway = new braintree.BraintreeGateway({
 };
 
 //payment
- const brainTreePaymentController = async (req, res) => {
+const brainTreePaymentController = async (req, res) => {
   try {
     const { nonce, cart } = req.body;
     let total = 0;
@@ -375,4 +369,20 @@ var gateway = new braintree.BraintreeGateway({
     console.log(error);
   }
 };
-module.exports={updateProductController,brainTreePaymentController,braintreeTokenController,productCategoryController,realtedProductController,searchProductController,productCategoryController,productCountController,productFiltersController,productListController,productPhotoController,createProductController,getProductController,getSingleProductController,deleteProductController}
+module.exports = {
+  updateProductController,
+  brainTreePaymentController,
+  braintreeTokenController,
+  productCategoryController,
+  realtedProductController,
+  searchProductController,
+  productCategoryController,
+  productCountController,
+  productFiltersController,
+  productListController,
+  productPhotoController,
+  createProductController,
+  getProductController,
+  getSingleProductController,
+  deleteProductController,
+};
