@@ -21,7 +21,7 @@ const withdrawalSchema = new mongoose.Schema(
       type: String,
       default: null,
     },
-    iefc_code: {
+    ifsc: {
       type: String,
       default: null,
     },
@@ -49,20 +49,19 @@ const transactionSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    type: {
+    product_name: {
       type: String,
-      enum: ["deposit", "withdrawal"],
       required: true,
     },
-    // Add more fields as needed for transaction details
+    transaction_id: {
+      type: String,
+      required: true,
+    }
   },
   { timestamps: true }
 );
 
-// Withdrawal Model
 const withdrawalModel = mongoose.model("withdrawals", withdrawalSchema);
-
-// Transaction Model
 const transactionModel = mongoose.model("transactions", transactionSchema);
 
 module.exports = {

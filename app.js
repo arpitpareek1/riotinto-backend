@@ -6,36 +6,27 @@ const morgan = require("morgan");
 const connectDB = require("./config/db.js");
 const cors = require("cors");
 const authRoutes = require("./routes/authRoute.js");
-const trasncantions = require("./routes/trasncantions.js");
+const transactions = require("./routes/transactionsRoutes.js");
+const user = require("./routes/userRoute.js");
 
 //configure env
 dotenv.config();
-
 //databse config
 connectDB();
-
 //rest object
 const app = express();
-
 //middelwares
 app.use(cors());
 app.use(express.json());
 app.use(morgan("dev"));
-
 //routes
 app.use("/api/v1/auth", authRoutes);
 app.use("/api/v1/category", categoryRoutes);
 app.use("/api/v1/product", productRoutes);
-app.use("/api/v1/trasncantions", trasncantions);
-
-//rest api
-app.get("/", (req, res) => {
-  res.send("<h1>Welcome to ecommerce app</h1>");
-});
-
+app.use("/api/v1/transactions", transactions);
+app.use("/api/v1/user", user);
 //PORT
 const PORT = process.env.PORT || 8080;
-
 //run listen
 app.listen(PORT, () => {
   console.log(
