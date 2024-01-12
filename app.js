@@ -21,11 +21,14 @@ app.use(express.json());
 app.use(morgan("dev"));
 //routes
 app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/category", categoryRoutes);
-app.use("/api/v1/product", productRoutes);
+// app.use("/api/v1/category", categoryRoutes);
+// app.use("/api/v1/product", productRoutes);
 app.use("/api/v1/transactions", transactions);
 app.use("/api/v1/user", user);
 //PORT
+app.use("/", (req, res)=>{
+res.send("why you here?")
+})
 const PORT = process.env.PORT || 8080;
 //run listen
 app.listen(PORT, () => {

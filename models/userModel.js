@@ -1,24 +1,5 @@
 const mongoose = require("mongoose");
 
-const addressSchema = new mongoose.Schema({
-  street: {
-    type: String,
-    default: null,
-  },
-  city: {
-    type: String,
-    default: null,
-  },
-  state: {
-    type: String,
-    default: null,
-  },
-  zipCode: {
-    type: String,
-    default: null,
-  },
-});
-
 const userSchema = new mongoose.Schema(
   {
     name: {
@@ -39,7 +20,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       required: true,
     },
-    address: addressSchema,
+    address: {
+      type: String,
+      default: null,
+    },
     money: {
       type: Number,
       required: true,
@@ -56,7 +40,7 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    isRefered:{
+    isRefered: {
       type: Boolean,
       default: false,
     },

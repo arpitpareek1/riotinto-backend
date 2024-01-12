@@ -2,7 +2,6 @@ const userModel = require("../models/userModel.js");
 const orderModel = require("../models/orderModel.js");
 const shortid = require("shortid");
 const {
-  comparePassword,
   hashPassword,
   generateOTP,
 } = require("../helpers/authHelper.js");
@@ -24,12 +23,14 @@ const registerController = async (req, res) => {
     if (!phone) {
       return res.send({ message: "Phone no is Required" });
     }
-   
-    if (await userModel.findOne({ email: email })) {
-      res.status(202).json({
+    const oldUser = await userModel.findOne({ email: email });
+    console.log(oldUser);
+    if (oldUser && oldUser._id) {
+      await res.status(202).json({
         status: false,
         massage: "Email already exits!!!",
       });
+      return;
     }
 
     let referredByUser = null;
@@ -59,7 +60,6 @@ const registerController = async (req, res) => {
       message: "User created successfully",
       user: savedUser,
     });
-
   } catch (error) {
     console.error(error);
     res.status(500).json({
@@ -71,7 +71,6 @@ const registerController = async (req, res) => {
 
 const updateUserMoney = async (UserEmail, newMoneyValue = undefined) => {
   referredByUser = await userModel.findOne({ email: UserEmail });
-  console.log("referredByUser.isRefered", typeof referredByUser.isRefered, referredByUser.isRefered);
   const newMoney =
     +referredByUser.money +
     (newMoneyValue ? newMoneyValue : referredByUser.isRefered ? 50 : 100);
@@ -113,8 +112,7 @@ const loginController = async (req, res) => {
         message: "Email is not registerd",
       });
     }
-    const match = await comparePassword(password, user.password);
-    if (!match) {
+    if (password !== user.password) {
       return res.status(200).send({
         success: false,
         message: "Invalid Password",

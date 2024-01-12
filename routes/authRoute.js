@@ -19,17 +19,6 @@ router.post("/login", loginController);
 router.post("/forgot-password", forgotPasswordController);
 
 router.get("/sent-otp", sendOtp);
-// //test routes
-// router.get("/test", requireSignIn, isAdmin, testController);
-
-// //protected User route auth
-// router.get("/user-auth", requireSignIn, (req, res) => {
-//   res.status(200).send({ ok: true });
-// });
-// // //protected Admin route auth
-// router.get("/admin-auth", requireSignIn, isAdmin, (req, res) => {
-//   res.status(200).send({ ok: true });
-// });
 
 // //update profile
 router.put("/profile", updateProfileController);
@@ -38,7 +27,7 @@ router.put("/profile", updateProfileController);
 // router.get("/orders", getOrdersController);
 
 // //all orders
-router.get("/all-orders", requireSignIn, isAdmin, getAllOrdersController);
+router.get("/all-orders", getAllOrdersController);
 
 // // order status update
 router.put(
@@ -47,4 +36,5 @@ router.put(
   isAdmin,
   orderStatusController
 );
+
 module.exports=router;
