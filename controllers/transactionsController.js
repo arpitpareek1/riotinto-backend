@@ -1,14 +1,15 @@
 const {
   withdrawalModel,
   transactionModel,
-} = require("../models/transactionModel");
+} = require("../models/transactionModel.js");
+
 const userModel = require("../models/userModel.js");
 
 const sendWithdrawReq = async (req, res) => {
   try {
     const { email, upi_id, bank_name, ifsc, cardInfo, amount } = req.body;
     if (!email || (!upi_id && !cardInfo) || !amount) {
-      res.status(500).json({
+      return res.status(500).json({
         message: "Please enter your payment info ",
         status: false,
       });
@@ -17,11 +18,12 @@ const sendWithdrawReq = async (req, res) => {
     const user = await userModel.findOne({ email });
 
     if (user.money < amount) {
-      res.status(500).json({
+      return res.status(500).json({
         success: false,
-        message: "Did n't have Enogth balance",
+        message: "Didn't have Enough balance",
       });
     }
+    console.log("user", user);
 
     await userModel.updateOne(
       { _id: user._id },
@@ -43,14 +45,14 @@ const sendWithdrawReq = async (req, res) => {
 
     const result = await model.save();
 
-    res.status(201).json({
+    return res.status(201).json({
       message: "Success",
       status: true,
       data: result,
     });
   } catch (err) {
     console.log(err);
-    res.status(500).send({
+    return res.status(500).send({
       success: false,
       message: "Error in sendWithdrawReq",
       error: err,
@@ -164,25 +166,26 @@ const getTransactionReqs = async (req, res) => {
   }
 };
 
-const redeamBalance = async (req, res) => {
+const redeemBalance = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await userModel.findOne({ email });
+
     const data = await transactionModel.find({
       userId: user._id,
     });
-    console.log(data);
-    const todaysBonus = 0;
+    console.log(user);
+    let todaysBonus = 0;
     for (let i = 0; i < data.length; i++) {
-      //TODO: need to get the accual days bouns from product
+      //TODO: need to get the accusal days bonus from product
       todaysBonus += 10;
     }
-    const result = userModel.updateOne({
+    const result = await userModel.updateOne({
       _id: user._id,
     }, {
       money: user.money + todaysBonus,
     });
-    
+
     res.status(201).json({
       message: "Success",
       status: true,
@@ -198,7 +201,7 @@ const redeamBalance = async (req, res) => {
   }
 };
 
-const addMoneyTowalit = async (req, res) => {
+const addMoneyToWallet = async (req, res) => {
   try {
     const { email, amount } = req.body;
     const user = await userModel.findOne({ email });
@@ -219,7 +222,7 @@ const addMoneyTowalit = async (req, res) => {
     console.log(err);
     res.status(500).send({
       success: false,
-      message: "Error in addMoneyTowalit",
+      message: "Error in addMoneyToWallet",
       error: err,
     });
   }
@@ -231,6 +234,7 @@ module.exports = {
   changeStatus,
   sendTransactionReq,
   getTransactionReqs,
-  redeamBalance,
-  addMoneyTowalit,
+  redeemBalance,
+  addMoneyToWallet,
 };
+ 

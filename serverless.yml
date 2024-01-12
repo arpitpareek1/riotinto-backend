@@ -1,0 +1,27 @@
+service: riotinto-backend #Name of your App - new development environment
+ 
+provider:
+  name: aws
+  runtime: nodejs18.x # Node JS version
+  memorySize: 512
+  timeout: 30
+  stage: ${opt:stage, 'development'} # serverless deploy --stage development/uat
+  environment:
+    NODE_ENV: ${opt:stage, self:provider.stage, 'development'}
+  region: us-east-1 # AWS region   # new profile
+  # region: us-west-1 # AWS region # current working
+ 
+# plugins:
+#   - serverless-plugin-typescript
+ 
+functions:
+  api:
+    handler: app.handler
+    events:
+      - http: ANY {proxy+}
+      - http: ANY /
+package:
+  include:
+    - src/**/*.ejs
+
+ 

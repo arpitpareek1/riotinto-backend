@@ -5,6 +5,11 @@
 /.pnp
 .pnp.js
 
+.build
+.serverless
+.vscode
+package-lock.json
+
 # testing
 /coverage
 

@@ -24,7 +24,7 @@ router.get("/sent-otp", sendOtp);
 router.put("/profile", updateProfileController);
 
 // //orders
-// router.get("/orders", getOrdersController);
+router.get("/orders", getOrdersController);
 
 // //all orders
 router.get("/all-orders", getAllOrdersController);
