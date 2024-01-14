@@ -7,7 +7,8 @@ const {
     sendTransactionReq,
     getTransactionReqs,
     redeemBalance,
-    addMoneyToWallet
+    addMoneyToWallet,
+    getTransactionForUser
 } = require('../controllers/transactionsController');
 
 // //router object
@@ -25,5 +26,6 @@ router.post("/sendTransactionReq", sendTransactionReq);
 //user wallet
 router.post("/addMoneyToWallet", addMoneyToWallet)
 router.post("/redeemBalance", redeemBalance)
+router.post("/getTransactionForUser", getTransactionForUser)
 
 module.exports = router;

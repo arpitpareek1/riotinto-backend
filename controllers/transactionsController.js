@@ -116,16 +116,22 @@ const sendTransactionReq = async (req, res) => {
     }
     const user = await userModel.findOne({ email });
 
-    await userModel.updateOne(
-      { _id: user._id },
+    if (user && user.money < amount) {
+      res.status(201).json({
+        message: "Your balance is less then the price.",
+        status: false,
+      });
+    }
+    let value = Number(user.money) - Number(amount)
+    const upDatedUser = await userModel.updateOne(
       {
-        $set: {
-          money: user.money + amount,
-        },
+        _id: user._id,
+      },
+      {
+        money: value,
       }
     );
-
-    const model = transactionModel({
+    const model = await transactionModel({
       userId: user._id,
       amount,
       transaction_id,
@@ -137,6 +143,7 @@ const sendTransactionReq = async (req, res) => {
       message: "Success",
       status: true,
       data: result,
+      upDatedUser
     });
   } catch (err) {
     console.log(err);
@@ -166,15 +173,34 @@ const getTransactionReqs = async (req, res) => {
   }
 };
 
+const checkIfOrderValidityEnds = (transactionDate, validity) => {
+  if (!transactionDate || !validity) {
+    return true;
+  } else {
+    const timeDifference = Date.now() - parseInt(user.lastRedeem);
+    return timeDifference < validity * 24 * 60 * 60 * 1000
+  }
+}
+
 const redeemBalance = async (req, res) => {
   try {
     const { email } = req.body;
     const user = await userModel.findOne({ email });
+    console.log(user);
+    if (user && user.lastRedeem) {
+      const timeDifference = Date.now() - parseInt(user.lastRedeem);
+      if (timeDifference < 24 * 60 * 60 * 1000) {
+        res.status(201).json({
+          message: "You have already reedem the points in 24 hours. please try after some time.",
+          status: false,
+        });
+      }
+    }
 
     const data = await transactionModel.find({
       userId: user._id,
     });
-    console.log(user);
+
     let todaysBonus = 0;
     for (let i = 0; i < data.length; i++) {
       //TODO: need to get the accusal days bonus from product
@@ -205,12 +231,14 @@ const addMoneyToWallet = async (req, res) => {
   try {
     const { email, amount } = req.body;
     const user = await userModel.findOne({ email });
-    const result = userModel.updateOne(
+    console.log("user.money", user.money, amount);
+    const toAdd = Number(user.money) + Number(amount)
+    const result = await userModel.updateOne(
       {
         _id: user._id,
       },
       {
-        amount: user.money + amount,
+        money: toAdd,
       }
     );
     res.status(201).json({
@@ -228,6 +256,48 @@ const addMoneyToWallet = async (req, res) => {
   }
 };
 
+const getTransactionForUser = async (req, res) => {
+  try {
+    const { email } = req.body
+    const user = await userModel.find({
+      email
+    });
+    console.log("user._id", user._id);
+    
+    if (user && user._id) {
+      const data = await transactionModel.find({
+        userId: user._id
+      })
+      console.log("data", data);
+      if (data) {
+        res.status(200).send({
+          success: true,
+          message: "Succsess",
+          data,
+        });
+      } else {
+        res.status(200).send({
+          success: true,
+          message: "Succsess",
+          data: [],
+        });
+      }
+    }else {
+      res.status(200).send({
+        success: false,
+        message: "Error in getTransactionForUser",
+        // error: error,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(500).send({
+      success: false,
+      message: "Error in getTransactionForUser",
+      error: error,
+    });
+  }
+}
 module.exports = {
   sendWithdrawReq,
   getAllWithDrawReqs,
@@ -236,5 +306,5 @@ module.exports = {
   getTransactionReqs,
   redeemBalance,
   addMoneyToWallet,
+  getTransactionForUser
 };
- 
