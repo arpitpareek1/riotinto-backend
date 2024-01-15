@@ -1,5 +1,5 @@
-service: riotinto-backend #Name of your App - new development environment
- 
+service: riotinto-backend
+
 provider:
   name: aws
   runtime: nodejs18.x # Node JS version
@@ -23,5 +23,8 @@ functions:
 package:
   include:
     - src/**/*.ejs
+  patterns:
+    - '!node_modules/**'
+
 
  

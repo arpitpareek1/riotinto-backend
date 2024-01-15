@@ -1,5 +1,3 @@
-const categoryRoutes = require("./routes/categoryRoutes.js");
-const productRoutes = require("./routes/productRoutes.js");
 const express = require("express");
 const dotenv = require("dotenv");
 const morgan = require("morgan");
@@ -28,15 +26,12 @@ app.use("/api/v1/user", user);
 const PORT = process.env.PORT || 8080;
 //run listen
 app.listen(PORT, () => {
-  const CONFIG = envConfig();
-  console.log(CONFIG);
   console.log(
-    `Server Running on ${process.env.DEV_MODE} mode on port ${PORT}`.bgCyan
-      .white
+    `Server Running on ${process.env.DEV_MODE} mode on port ${PORT}`
   );
 });
 
 const server = awsServerlessExpress.createServer(app);
- 
+
 module.exports.handler = (event, context) =>
   awsServerlessExpress.proxy(server, event, context);
