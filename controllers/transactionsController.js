@@ -259,7 +259,7 @@ const addMoneyToWallet = async (req, res) => {
 const getTransactionForUser = async (req, res) => {
   try {
     const { email } = req.body
-    const user = await userModel.find({
+    const user = await userModel.findOne({
       email
     });
     console.log("user._id", user._id);
