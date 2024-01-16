@@ -2,7 +2,7 @@ service: riotinto-backend
 
 provider:
   name: aws
-  runtime: nodejs18.x # Node JS version
+  runtime: nodejs16.x # Node JS version
   memorySize: 512
   timeout: 30
   stage: ${opt:stage, 'development'} # serverless deploy --stage development/uat
@@ -23,8 +23,7 @@ functions:
 package:
   include:
     - src/**/*.ejs
-  patterns:
-    - '!node_modules/**'
+
 
 
  
