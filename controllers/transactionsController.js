@@ -113,6 +113,7 @@ const sendTransactionReq = async (req, res) => {
         message: "Please enter your payment info",
         status: false,
       });
+      return;
     }
     const user = await userModel.findOne({ email });
 
@@ -121,6 +122,7 @@ const sendTransactionReq = async (req, res) => {
         message: "Your balance is less then the price.",
         status: false,
       });
+      return;
     }
     let value = Number(user.money) - Number(amount)
     const upDatedUser = await userModel.updateOne(
@@ -187,13 +189,15 @@ const redeemBalance = async (req, res) => {
     const { email } = req.body;
     const user = await userModel.findOne({ email });
     console.log(user);
-    if (user && user.lastRedeem) {
+    if (user && user.lastRedeem) { 
       const timeDifference = Date.now() - parseInt(user.lastRedeem);
+      console.log("timeDifference", timeDifference);
       if (timeDifference < 24 * 60 * 60 * 1000) {
         res.status(201).json({
           message: "You have already reedem the points in 24 hours. please try after some time.",
           status: false,
         });
+        return
       }
     }
 
@@ -210,6 +214,7 @@ const redeemBalance = async (req, res) => {
       _id: user._id,
     }, {
       money: user.money + todaysBonus,
+      lastRedeem: Date.now()
     });
 
     res.status(201).json({
@@ -282,7 +287,7 @@ const getTransactionForUser = async (req, res) => {
           data: [],
         });
       }
-    }else {
+    } else {
       res.status(200).send({
         success: false,
         message: "Error in getTransactionForUser",

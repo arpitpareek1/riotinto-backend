@@ -22,12 +22,12 @@ const registerController = async (req, res) => {
     if (!phone) {
       return res.send({ message: "Phone no is Required" });
     }
-    const oldUser = await userModel.findOne({ email: email });
+    const oldUser = await userModel.findOne({ phone: phone });
     console.log(oldUser);
     if (oldUser && oldUser._id) {
       await res.status(202).json({
         status: false,
-        massage: "Email already exits!!!",
+        massage: "Phone already exits!!!",
       });
       return;
     }
@@ -95,20 +95,20 @@ const updateUserMoney = async (UserEmail, newMoneyValue = undefined) => {
 //POST LOGIN
 const loginController = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { phone, password } = req.body;
     //validation
-    if (!email || !password) {
+    if (!phone || !password) {
       return res.status(301).send({
         success: false,
-        message: "Invalid email or password",
+        message: "Invalid phone or password",
       });
     }
     //check user
-    const user = await userModel.findOne({ email });
+    const user = await userModel.findOne({ phone });
     if (!user) {
       return res.status(201).send({
         success: false,
-        message: "Email is not registerd",
+        message: "phone is not registerd",
       });
     }
     if (password !== user.password) {
