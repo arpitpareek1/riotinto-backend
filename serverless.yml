@@ -8,7 +8,7 @@ provider:
   stage: ${opt:stage, 'development'} # serverless deploy --stage development/uat
   environment:
     NODE_ENV: ${opt:stage, self:provider.stage, 'development'}
-  region: us-east-1 # AWS region   # new profile
+  region: ap-south-1 # AWS region   # new profile
   # region: us-west-1 # AWS region # current working
  
 # plugins:

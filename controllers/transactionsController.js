@@ -9,16 +9,15 @@ const sendWithdrawReq = async (req, res) => {
   try {
     const { email, upi_id, bank_name, ifsc, cardInfo, amount } = req.body;
     if (!email || (!upi_id && !cardInfo) || !amount) {
-      return res.status(500).json({
+      return res.status(200).json({
         message: "Please enter your payment info ",
         status: false,
       });
     }
 
     const user = await userModel.findOne({ email });
-
     if (user.money < amount) {
-      return res.status(500).json({
+      return res.status(200).json({
         success: false,
         message: "Didn't have Enough balance",
       });

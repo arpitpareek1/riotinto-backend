@@ -7,6 +7,10 @@ const {
 const twilio = require("twilio");
 const JWT = require("jsonwebtoken");
 
+const accountSid = "ACed105a8cab8085c03bd58cfca1d3e48c";
+const authToken = "f80a2b27f0c1a0700cc83fdb9d237ed0";
+const serviceSid = "VAfcfb7a05283dfd28955ea6beff9451ef"
+
 const registerController = async (req, res) => {
   try {
     const { name, email, password, phone, address, userReferCode } = req.body;
@@ -23,11 +27,19 @@ const registerController = async (req, res) => {
       return res.send({ message: "Phone no is Required" });
     }
     const oldUser = await userModel.findOne({ phone: phone });
+    const oldUserEmail = await userModel.findOne({ email: email });
     console.log(oldUser);
     if (oldUser && oldUser._id) {
       await res.status(202).json({
         status: false,
         massage: "Phone already exits!!!",
+      });
+      return;
+    }
+    if (oldUserEmail && oldUserEmail._id) {
+      await res.status(202).json({
+        status: false,
+        massage: "Email already exits!!!",
       });
       return;
     }
@@ -108,7 +120,7 @@ const loginController = async (req, res) => {
     if (!user) {
       return res.status(201).send({
         success: false,
-        message: "phone is not registerd",
+        message: "phone is not registered",
       });
     }
     if (password !== user.password) {
@@ -142,7 +154,7 @@ const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
     if (!email) {
-      res.status(400).send({ message: "Emai is required" });
+      res.status(400).send({ message: "Email is required" });
     }
     if (!answer) {
       res.status(400).send({ message: "answer is required" });
@@ -175,14 +187,14 @@ const forgotPasswordController = async (req, res) => {
   }
 };
 
-//update prfole
+//update profile
 const updateProfileController = async (req, res) => {
   try {
     const { name, email, password, address, phone } = req.body;
     const user = await userModel.findById(req.user._id);
     //password
     if (password && password.length < 6) {
-      return res.json({ error: "Passsword is required and 6 character long" });
+      return res.json({ error: "Password is required and 6 character long" });
     }
     const hashedPassword = password ? await hashPassword(password) : undefined;
     const updatedUser = await userModel.findByIdAndUpdate(
@@ -212,33 +224,39 @@ const updateProfileController = async (req, res) => {
 
 
 const sendOtp = async (req, res) => {
-  const accountSid = "AC83f3835404f95ea8eea0b1cf3031c06a";
-  const authToken = "3d3ac7c3ee187bf8467af66e1b8c6f1a";
-  const client = new twilio(accountSid, authToken);
   const phoneNumber = req.body.phoneNumber;
-  const otp = generateOTP();
-  client.messages
-    .create({
-      body: `\n\nYour OTP for Riotinto signup is  ${otp}`,
+  try {
+    const client = require('twilio')(accountSid, authToken);
+    client.verify.v2.services(serviceSid)
+      .verifications
+      .create({ to: '+91' + phoneNumber, channel: 'sms' })
+      .then(verification => res.json({ status: true, verification }))
+      .catch(err => res.json({ status: false, error: err.message }));
+  } catch (error) {
+    res.json({ status: false, error: error.message });
+  }
+};
+
+const verifyOtp = async (req, res) => {
+  const { phoneNumber, code } = req.body;
+  try {
+    const client = require('twilio')(accountSid, authToken);
+    const check = await client.verify.v2.services(serviceSid).verificationChecks.create({
       to: "+91" + phoneNumber,
-      from: "+17179644830",
+      code,
     })
-    .then((message) => {
-      res.send({
-        status: true,
-        data: otp,
-      });
-    })
-    .catch((error) => {
-      console.error(error);
-      res.status(500).send({
-        status: false,
-        data: "Failed to send OTP!!!",
-      });
-    });
+      .then(verification => {
+        res.json({ status: true, verification })
+      })
+      .catch(err => res.json({ status: false, error: err.message }));
+
+  } catch (error) {
+    res.json({ status: false, error: error.message });
+  }
 };
 
 module.exports = {
+  verifyOtp,
   sendOtp,
   registerController,
   loginController,

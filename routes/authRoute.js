@@ -1,6 +1,6 @@
 // import express from "express";
 
-const { forgotPasswordController, sendOtp, loginController, registerController, updateProfileController } = require("../controllers/authController");
+const { forgotPasswordController, sendOtp, loginController, registerController, updateProfileController, verifyOtp } = require("../controllers/authController");
 const express = require('express');
 
 
@@ -17,8 +17,9 @@ router.post("/login", loginController);
 // //Forgot Password || POST
 router.post("/forgot-password", forgotPasswordController);
 
-router.get("/sent-otp", sendOtp);
+router.post("/sent-otp", sendOtp);
 
+router.post("/verifyOtp", verifyOtp);
 // //update profile
 router.put("/profile", updateProfileController);
 

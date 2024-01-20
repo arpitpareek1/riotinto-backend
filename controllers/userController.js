@@ -14,9 +14,11 @@ const getAllInfoUser = async (req, res) => {
             const transactionsInfo = await transactionModel.find({
                 userId: userInfo._id,
             });
+
             const withdrawalInfo = await withdrawalModel.find({
                 userId: userInfo._id,
             });
+            
             res.status(200).json({
                 status: true,
                 data: {
