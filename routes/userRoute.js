@@ -1,15 +1,32 @@
 
 const express = require('express');
-const { getAllInfoUser, getRefferForUser } = require('../controllers/userController.js');
+const { getAllInfoUser, getRefferForUser, getAllData } = require('../controllers/userController.js');
 const { productsData, newsData } = require('../helpers/authHelper.js');
+const { insertProducts, updatedProduct, getAllProductsData } = require("../controllers/productsController.js")
+const {
+    insertNews,
+    getAllNews,
+    updateNews
+} = require("../controllers/newsController.js")
 
 // //router object
 const router = express.Router();
 
 router.post('/userData', getAllInfoUser);
+
+router.get("/getAllData", getAllData)
+
 router.post('/getRefferForUser', getRefferForUser);
-router.get('/getAllProduct', (req, res) => res.json(productsData))
-router.get('/getAllNewsData', (req, res) => res.json(newsData))
-router.get('/getRefferForUser', (req, res) => res.json(newsData))
+
+router.post('/updatedProduct', updatedProduct);
+router.post('/insertProducts', insertProducts);
+
+router.post('/insertNews', insertNews);
+router.post('/updateNews', updateNews);
+
+router.get('/getAllProduct', getAllProductsData)
+router.get('/getAllNewsData', getAllNews)
+
+
 
 module.exports = router;

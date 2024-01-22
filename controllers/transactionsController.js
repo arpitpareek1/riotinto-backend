@@ -114,6 +114,7 @@ const sendTransactionReq = async (req, res) => {
       });
       return;
     }
+
     const user = await userModel.findOne({ email });
 
     if (user && user.money < amount) {
@@ -123,7 +124,9 @@ const sendTransactionReq = async (req, res) => {
       });
       return;
     }
-    let value = Number(user.money) - Number(amount)
+
+    let value = Number(user.money) - Number(amount);
+
     const upDatedUser = await userModel.updateOne(
       {
         _id: user._id,
@@ -132,12 +135,14 @@ const sendTransactionReq = async (req, res) => {
         money: value,
       }
     );
+
     const model = await transactionModel({
       userId: user._id,
       amount,
       transaction_id,
       product_name,
     });
+
     const result = await model.save();
 
     res.status(201).json({
@@ -188,7 +193,7 @@ const redeemBalance = async (req, res) => {
     const { email } = req.body;
     const user = await userModel.findOne({ email });
     console.log(user);
-    if (user && user.lastRedeem) { 
+    if (user && user.lastRedeem) {
       const timeDifference = Date.now() - parseInt(user.lastRedeem);
       console.log("timeDifference", timeDifference);
       if (timeDifference < 24 * 60 * 60 * 1000) {
@@ -233,10 +238,18 @@ const redeemBalance = async (req, res) => {
 
 const addMoneyToWallet = async (req, res) => {
   try {
-    const { email, amount } = req.body;
+    const { email, amount , transaction_id} = req.body;
     const user = await userModel.findOne({ email });
     console.log("user.money", user.money, amount);
     const toAdd = Number(user.money) + Number(amount)
+
+    const model = await transactionModel({
+      userId: user._id,
+      amount,
+      transaction_id: transaction_id ? transaction_id : "jhgflksdjlfaksdjbldksj",
+      product_name: "ADDED_TO_WALLET",
+    });
+
     const result = await userModel.updateOne(
       {
         _id: user._id,
@@ -267,7 +280,7 @@ const getTransactionForUser = async (req, res) => {
       email
     });
     console.log("user._id", user._id);
-    
+
     if (user && user._id) {
       const data = await transactionModel.find({
         userId: user._id
