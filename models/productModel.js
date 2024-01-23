@@ -11,6 +11,7 @@ const productSchema = new mongoose.Schema({
   validity: { type: Number, required: true },
   purchaseLimit: { type: Number, required: true },
   desc: { type: String, required: true },
+  isHot: { type: Boolean, require: true, default: false }
 });
 
 const Product = mongoose.model('Product', productSchema);

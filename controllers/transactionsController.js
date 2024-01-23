@@ -1,3 +1,4 @@
+const Product = require("../models/productModel.js");
 const {
   withdrawalModel,
   transactionModel,
@@ -198,7 +199,7 @@ const redeemBalance = async (req, res) => {
       console.log("timeDifference", timeDifference);
       if (timeDifference < 24 * 60 * 60 * 1000) {
         res.status(201).json({
-          message: "You have already reedem the points in 24 hours. please try after some time.",
+          message: "You have already redeem the points in 24 hours. please try after some time.",
           status: false,
         });
         return
@@ -210,9 +211,13 @@ const redeemBalance = async (req, res) => {
     });
 
     let todaysBonus = 0;
+    const products = await Product.find();
+    console.log(products);
     for (let i = 0; i < data.length; i++) {
-      //TODO: need to get the accusal days bonus from product
-      todaysBonus += 10;
+      const traProduct = products.filter((product) => product.title === data[i].product_name)
+      if (traProduct.length) {
+        todaysBonus += Number(traProduct[0].dailyIncome);
+      }
     }
     const result = await userModel.updateOne({
       _id: user._id,
@@ -238,7 +243,7 @@ const redeemBalance = async (req, res) => {
 
 const addMoneyToWallet = async (req, res) => {
   try {
-    const { email, amount , transaction_id} = req.body;
+    const { email, amount, transaction_id } = req.body;
     const user = await userModel.findOne({ email });
     console.log("user.money", user.money, amount);
     const toAdd = Number(user.money) + Number(amount)
