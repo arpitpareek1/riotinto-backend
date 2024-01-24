@@ -4,12 +4,13 @@ const {
   hashPassword,
   generateOTP,
 } = require("../helpers/authHelper.js");
-const twilio = require("twilio");
 const JWT = require("jsonwebtoken");
+const sdk = require('api')('@telesign-enterprise/v1.0#55lb030lqba2f1f');
+
 
 const accountSid = "ACed105a8cab8085c03bd58cfca1d3e48c";
-const authToken = "f80a2b27f0c1a0700cc83fdb9d237ed0";
-const serviceSid = "VAfcfb7a05283dfd28955ea6beff9451ef"
+const authToken = "f7614b8428cc4d945e0e992af2647b98";
+const serviceSid = "VAc5593ff31f6aff02ab4503d7d3e818c4";
 
 const registerController = async (req, res) => {
   try {
@@ -222,16 +223,16 @@ const updateProfileController = async (req, res) => {
   }
 };
 
-
 const sendOtp = async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   try {
-    const client = require('twilio')(accountSid, authToken);
-    client.verify.v2.services(serviceSid)
-      .verifications
-      .create({ to: '+91' + phoneNumber, channel: 'sms' })
-      .then(verification => res.json({ status: true, verification }))
-      .catch(err => res.json({ status: false, error: err.message }));
+    const otp = generateOTP()
+    sdk.auth('C1C7CFC7-2B36-46D6-B841-AEDD859E1E50', 'eKEHCozjEtsV49WdkQ3dbGPZH5Sx2PKz50iEUx85xikGvZ5W93DhxJIeg7RlO38YUgyGt9nkynA2HvWmDOVdQQ==');
+    sdk.sendSMSVerifyCode({ is_primary: 'true', phone_number: '91' + phoneNumber, verify_code: otp })
+      .then(({ data }) => {
+        res.json({ status: true, data, otp })
+      })
+      .catch(err => res.json({ status: false, error: err }));
   } catch (error) {
     res.json({ status: false, error: error.message });
   }

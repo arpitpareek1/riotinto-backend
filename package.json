@@ -13,6 +13,7 @@
   "author": "Ronak",
   "license": "MIT",
   "dependencies": {
+    "api": "^6.1.1",
     "aws-sdk": "^2.1534.0",
     "aws-serverless-express": "^3.4.0",
     "cors": "^2.8.5",
