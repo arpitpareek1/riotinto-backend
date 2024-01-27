@@ -1,10 +1,10 @@
+const userModel = require("../models/userModel.js");
 const Product = require("../models/productModel.js");
 const {
   withdrawalModel,
   transactionModel,
 } = require("../models/transactionModel.js");
 
-const userModel = require("../models/userModel.js");
 
 const sendWithdrawReq = async (req, res) => {
   try {
@@ -180,12 +180,35 @@ const getTransactionReqs = async (req, res) => {
   }
 };
 
-const checkIfOrderValidityEnds = (transactionDate, validity) => {
-  if (!transactionDate || !validity) {
-    return true;
-  } else {
-    const timeDifference = Date.now() - parseInt(user.lastRedeem);
-    return timeDifference < validity * 24 * 60 * 60 * 1000
+function isPlanExpired(validityDays, startDate) {
+  const currentDate = new Date();
+  const planEndDate = new Date(startDate);
+  planEndDate.setDate(planEndDate.getDate() + validityDays);
+  console.log("iiiiiiiiiiiii", currentDate, planEndDate);
+  return currentDate >= planEndDate;
+}
+
+async function removeExpiredProducts(id) {
+  const allProducts = await Product.find();
+  const allTransitions = await transactionModel.find({
+    userId: id
+  });
+  console.log(allTransitions);
+  if (allTransitions && allTransitions.length) {
+    for (let i = 0; i < allTransitions.length; i++) {
+      const transaction = allTransitions[i]
+      const product = allProducts.filter((product) => product.title === transaction.product_name);
+      console.log("isPlanExpired(product[0].validity, transaction.createdAt)", isPlanExpired(product[0].validity, transaction.createdAt));
+      if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
+        console.log("transaction._id", transaction._id);
+        const deleteValue = await transactionModel.deleteOne({
+          _id: transaction._id
+        })
+        console.log(deleteValue);
+      } else {
+        console.log(product);
+      }
+    }
   }
 }
 
@@ -195,6 +218,7 @@ const redeemBalance = async (req, res) => {
     const user = await userModel.findOne({ email });
     console.log(user);
     if (user && user.lastRedeem) {
+      await removeExpiredProducts(user._id);
       const timeDifference = Date.now() - parseInt(user.lastRedeem);
       console.log("timeDifference", timeDifference);
       if (timeDifference < 24 * 60 * 60 * 1000) {
@@ -294,13 +318,13 @@ const getTransactionForUser = async (req, res) => {
       if (data) {
         res.status(200).send({
           success: true,
-          message: "Succsess",
+          message: "Success",
           data,
         });
       } else {
         res.status(200).send({
           success: true,
-          message: "Succsess",
+          message: "Success",
           data: [],
         });
       }
@@ -308,7 +332,6 @@ const getTransactionForUser = async (req, res) => {
       res.status(200).send({
         success: false,
         message: "Error in getTransactionForUser",
-        // error: error,
       });
     }
   } catch (error) {
@@ -320,6 +343,56 @@ const getTransactionForUser = async (req, res) => {
     });
   }
 }
+
+const canUserBuyProduct = async (req, res) => {
+  try {
+    const { email, title } = req.body;
+    const sendOk = () => {
+      res.status(200).send({
+        success: true,
+        message: "Can buy this product"
+      });
+    }
+    const user = await userModel.findOne({
+      email
+    });
+    console.log("user._id", user._id);
+    if (user && user._id && title) {
+      const data = await transactionModel.find({
+        userId: user._id,
+        product_name: title
+      });
+      console.log("data", data);
+      if (data && data.length > 0) {
+        const product = await Product.find({
+          title: title
+        });
+        console.log("product", product);
+        if (product && product.length) {
+          if (data.length >= Number(product[0].purchaseLimit)) {
+            res.status(200).send({
+              success: false,
+              message: "You Cannot purchase this product as you have exceeded the limit for purchases"
+            });
+          } else {
+            sendOk()
+          }
+        } else {
+          console.log("Product not found");
+        }
+      } else {
+        sendOk()
+        console.log("No transaction data found");
+      }
+    } else {
+      console.log("User not found or missing user ID or title");
+    }
+  } catch (e) {
+    console.error("Error:", e);
+  }
+
+}
+
 module.exports = {
   sendWithdrawReq,
   getAllWithDrawReqs,
@@ -328,5 +401,6 @@ module.exports = {
   getTransactionReqs,
   redeemBalance,
   addMoneyToWallet,
-  getTransactionForUser
+  getTransactionForUser,
+  canUserBuyProduct
 };

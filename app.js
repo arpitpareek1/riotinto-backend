@@ -11,11 +11,11 @@ const awsServerlessExpress = require("aws-serverless-express");
 const envConfig = require('./envConfig');
 //configure env
 dotenv.config();
-//databse config
+//database config
 connectDB();
 //rest object
 const app = express();
-//middelwares
+//middlewares
 app.use(cors());
 app.use(express.json());
 app.use(morgan("combined"));
