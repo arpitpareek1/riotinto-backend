@@ -83,6 +83,28 @@ const getAllWithDrawReqs = async (req, res) => {
 const changeStatus = async (req, res) => {
   try {
     const { status, id } = req.body;
+
+    if (status === "cancelled") {
+      const transactionInfo = await withdrawalModel.findOne({
+        _id: id
+      })
+      console.log("tra", transactionInfo);
+      if (transactionInfo && transactionInfo.userId) {
+        const userInfo = await userModel.findOne({ _id: transactionInfo.userId });
+        console.log("user", userInfo);
+        if (userInfo) {
+          await userModel.updateOne(
+            { _id: transactionInfo.userId },
+            {
+              $set: {
+                money: Number(transactionInfo.amount) + Number(userInfo.money),
+              },
+            }
+          );
+        }
+      }
+    }
+
     await withdrawalModel.updateOne(
       { _id: id },
       {
@@ -91,9 +113,11 @@ const changeStatus = async (req, res) => {
         },
       }
     );
+
     res.status(200).json({
       status: true,
     });
+
   } catch (error) {
     console.log(error);
     res.status(500).send({
@@ -195,18 +219,35 @@ async function removeExpiredProducts(id) {
   });
   console.log(allTransitions);
   if (allTransitions && allTransitions.length) {
+    const toAddMoney = 0;
     for (let i = 0; i < allTransitions.length; i++) {
       const transaction = allTransitions[i]
       const product = allProducts.filter((product) => product.title === transaction.product_name);
       console.log("isPlanExpired(product[0].validity, transaction.createdAt)", isPlanExpired(product[0].validity, transaction.createdAt));
       if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
         console.log("transaction._id", transaction._id);
+        if (product[0].isHot) {
+          toAddMoney += product[0].price
+        }
+
         const deleteValue = await transactionModel.deleteOne({
           _id: transaction._id
         })
         console.log(deleteValue);
       } else {
         console.log(product);
+      }
+    }
+    if (toAddMoney) {
+      const user = await userModel.findOne({
+        _id: id
+      });
+      if (user) {
+        await userModel.updateOne({
+          _id: id
+        }, {
+          money: Number(user.money) + Number(toAddMoney)
+        })
       }
     }
   }
@@ -238,7 +279,7 @@ const redeemBalance = async (req, res) => {
     const products = await Product.find();
     console.log(products);
     for (let i = 0; i < data.length; i++) {
-      const traProduct = products.filter((product) => product.title === data[i].product_name)
+      const traProduct = products.filter((product) => !product.isHot && product.title === data[i].product_name)
       if (traProduct.length) {
         todaysBonus += Number(traProduct[0].dailyIncome);
       }
@@ -272,13 +313,14 @@ const addMoneyToWallet = async (req, res) => {
     console.log("user.money", user.money, amount);
     const toAdd = Number(user.money) + Number(amount)
 
-    const model = await transactionModel({
+    const model = await transactionModel.insertMany({
       userId: user._id,
-      amount,
+      amount: Number(amount),
       transaction_id: transaction_id ? transaction_id : "jhgflksdjlfaksdjbldksj",
       product_name: "ADDED_TO_WALLET",
     });
 
+    console.log("model", model);
     const result = await userModel.updateOne(
       {
         _id: user._id,
@@ -287,11 +329,13 @@ const addMoneyToWallet = async (req, res) => {
         money: toAdd,
       }
     );
+
     res.status(201).json({
       message: "Success",
       status: true,
       data: result,
     });
+
   } catch (err) {
     console.log(err);
     res.status(500).send({
