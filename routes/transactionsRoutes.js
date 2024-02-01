@@ -9,7 +9,8 @@ const {
     redeemBalance,
     addMoneyToWallet,
     getTransactionForUser,
-    canUserBuyProduct
+    canUserBuyProduct,
+    getWithDrawReqs
 } = require('../controllers/transactionsController');
 
 // //router object
@@ -18,6 +19,7 @@ const router = express.Router();
 //withdraw
 router.post("/sendWithdrawReq", sendWithdrawReq);
 router.get("/getAllWithDrawReqs", getAllWithDrawReqs);
+router.post("/getWithDrawReqs", getWithDrawReqs);
 router.post("/changeStatus", changeStatus);
 
 //transactions

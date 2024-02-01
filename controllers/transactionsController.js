@@ -79,6 +79,40 @@ const getAllWithDrawReqs = async (req, res) => {
     });
   }
 };
+const getWithDrawReqs = async (req, res) => {
+  try {
+    const { email } = req.body;
+    console.log(email);
+    const user = await userModel.findOne({
+      email: email
+    })
+    console.log(user);
+    if (!user) {
+      return res.status(200).send({
+        message: "user not found"
+      })
+    }
+
+    const data = await withdrawalModel.find({
+      status: "pending",
+      userId: user._id
+    });
+
+    res.status(201).json({
+      message: "Success",
+      status: true,
+      data,
+    });
+
+  } catch (err) {
+    console.log(err);
+    res.status(500).send({
+      success: false,
+      message: "Error in getAllWithDrawReqs",
+      error: err,
+    });
+  }
+};
 
 const changeStatus = async (req, res) => {
   try {
@@ -217,13 +251,13 @@ async function removeExpiredProducts(id) {
   const allTransitions = await transactionModel.find({
     userId: id
   });
-  console.log(allTransitions);
+  // console.log(allTransitions);
   if (allTransitions && allTransitions.length) {
-    const toAddMoney = 0;
+    let toAddMoney = 0;
     for (let i = 0; i < allTransitions.length; i++) {
       const transaction = allTransitions[i]
       const product = allProducts.filter((product) => product.title === transaction.product_name);
-      console.log("isPlanExpired(product[0].validity, transaction.createdAt)", isPlanExpired(product[0].validity, transaction.createdAt));
+      // console.log("isPlanExpired(product[0].validity, transaction.createdAt)", isPlanExpired(product[0].validity, transaction.createdAt));
       if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
         console.log("transaction._id", transaction._id);
         if (product[0].isHot) {
@@ -238,6 +272,7 @@ async function removeExpiredProducts(id) {
         console.log(product);
       }
     }
+    console.log("toAddMoney", toAddMoney);
     if (toAddMoney) {
       const user = await userModel.findOne({
         _id: id
@@ -446,5 +481,6 @@ module.exports = {
   redeemBalance,
   addMoneyToWallet,
   getTransactionForUser,
-  canUserBuyProduct
+  canUserBuyProduct,
+  getWithDrawReqs
 };
