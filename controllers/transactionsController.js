@@ -264,10 +264,10 @@ async function removeExpiredProducts(id) {
           toAddMoney += product[0].price
         }
 
-        const deleteValue = await transactionModel.deleteOne({
-          _id: transaction._id
-        })
-        console.log(deleteValue);
+        // const deleteValue = await transactionModel.deleteOne({
+        //   _id: transaction._id
+        // })
+        // console.log(deleteValue);
       } else {
         console.log(product);
       }

@@ -5,6 +5,7 @@ const {
   generateOTP,
 } = require("../helpers/authHelper.js");
 const JWT = require("jsonwebtoken");
+const Settings = require("../models/settings.js");
 const sdk = require('api')('@telesign-enterprise/v1.0#55lb030lqba2f1f');
 
 
@@ -50,7 +51,12 @@ const registerController = async (req, res) => {
     if (userReferCode) {
       referredByUser = await userModel.findOne({ referralCode: userReferCode });
       if (referredByUser) {
-        updateUserMoney(referredByUser.email);
+        const settings = await Settings.findOne({
+          key: "refer_amount"
+        });
+        if (settings && settings.value) {
+          const p = await updateUserMoney(referredByUser.email, settings.value);
+        }
       }
     }
 
@@ -60,7 +66,7 @@ const registerController = async (req, res) => {
       password: password,
       phone,
       address,
-      money: 100,
+      money: 0,
       referredBy: referredByUser ? referredByUser._id : null,
       referralCode: shortid.generate(),
       userReferCode,
@@ -81,17 +87,20 @@ const registerController = async (req, res) => {
   }
 };
 
-const updateUserMoney = async (UserEmail, newMoneyValue = undefined) => {
-  referredByUser = await userModel.findOne({ email: UserEmail });
-  const newMoney =
-    +referredByUser.money +
-    (newMoneyValue ? newMoneyValue : referredByUser.isRefered ? 50 : 100);
+const updateUserMoney = async (UserEmail, refferAmount) => {
+  const referredByUser = await userModel.findOne({ email: UserEmail });
+
+  const newMoney = +referredByUser.money + (
+    referredByUser.isRefered ?
+      50 :
+      refferAmount
+  );
   console.log(newMoney);
   userModel.updateOne(
     { email: UserEmail },
     {
       $set: {
-        money: newMoney,
+        money: Number(newMoney),
         isRefered: true,
       },
     },
@@ -226,11 +235,11 @@ const updateProfileController = async (req, res) => {
 const sendOtp = async (req, res) => {
   const phoneNumber = req.body.phoneNumber;
   try {
-    const otp = generateOTP()
+    const otp = generateOTP();
     sdk.auth('C1C7CFC7-2B36-46D6-B841-AEDD859E1E50', 'eKEHCozjEtsV49WdkQ3dbGPZH5Sx2PKz50iEUx85xikGvZ5W93DhxJIeg7RlO38YUgyGt9nkynA2HvWmDOVdQQ==');
     sdk.sendSMSVerifyCode({ is_primary: 'true', phone_number: '91' + phoneNumber, verify_code: otp })
       .then(({ data }) => {
-        res.json({ status: true, data, otp })
+        res.json({ status: true, data, otp });
       })
       .catch(err => res.json({ status: false, error: err }));
   } catch (error) {
@@ -247,7 +256,7 @@ const verifyOtp = async (req, res) => {
       code,
     })
       .then(verification => {
-        res.json({ status: true, verification })
+        res.json({ status: true, verification });
       })
       .catch(err => res.json({ status: false, error: err.message }));
 
