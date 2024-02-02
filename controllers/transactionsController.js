@@ -94,7 +94,6 @@ const getWithDrawReqs = async (req, res) => {
     }
 
     const data = await withdrawalModel.find({
-      status: "pending",
       userId: user._id
     });
 
