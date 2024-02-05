@@ -5,7 +5,7 @@ const {
   generateOTP,
 } = require("../helpers/authHelper.js");
 const JWT = require("jsonwebtoken");
-const Settings = require("../models/settings.js");
+// const Settings = require("../models/settings.js");
 const sdk = require('api')('@telesign-enterprise/v1.0#55lb030lqba2f1f');
 
 
@@ -47,17 +47,16 @@ const registerController = async (req, res) => {
     }
 
     let referredByUser = null;
-
     if (userReferCode) {
       referredByUser = await userModel.findOne({ referralCode: userReferCode });
-      if (referredByUser) {
-        const settings = await Settings.findOne({
-          key: "refer_amount"
-        });
-        if (settings && settings.value) {
-          const p = await updateUserMoney(referredByUser.email, settings.value);
-        }
-      }
+      // if (referredByUser) {
+      //   settings = await Settings.findOne({
+      //     key: "refer_amount"
+      //   });
+      //   if (settings && settings.value) {
+      //     const p = await updateUserMoney(referredByUser.email, settings.value);
+      //   }
+      // }
     }
 
     const newUser = new userModel({
@@ -69,6 +68,7 @@ const registerController = async (req, res) => {
       money: 0,
       referredBy: referredByUser ? referredByUser._id : null,
       referralCode: shortid.generate(),
+      rechargePoints:0,
       userReferCode,
     });
 
@@ -93,7 +93,7 @@ const updateUserMoney = async (UserEmail, refferAmount) => {
   const newMoney = +referredByUser.money + (
     referredByUser.isRefered ?
       50 :
-      refferAmount
+      Number(refferAmount)
   );
   console.log(newMoney);
   userModel.updateOne(

@@ -4,6 +4,7 @@ const {
   withdrawalModel,
   transactionModel,
 } = require("../models/transactionModel.js");
+const Settings = require("../models/settings.js");
 
 
 const sendWithdrawReq = async (req, res) => {
@@ -175,7 +176,7 @@ const sendTransactionReq = async (req, res) => {
 
     const user = await userModel.findOne({ email });
 
-    if (user && user.money < amount) {
+    if (user && user.rechargePoints < amount) {
       res.status(201).json({
         message: "Your balance is less then the price.",
         status: false,
@@ -183,14 +184,14 @@ const sendTransactionReq = async (req, res) => {
       return;
     }
 
-    let value = Number(user.money) - Number(amount);
+    let value = Number(user.rechargePoints) - Number(amount);
 
     const upDatedUser = await userModel.updateOne(
       {
         _id: user._id,
       },
       {
-        money: value,
+        rechargePoints: value,
       }
     );
 
@@ -250,23 +251,16 @@ async function removeExpiredProducts(id) {
   const allTransitions = await transactionModel.find({
     userId: id
   });
-  // console.log(allTransitions);
   if (allTransitions && allTransitions.length) {
     let toAddMoney = 0;
     for (let i = 0; i < allTransitions.length; i++) {
       const transaction = allTransitions[i]
       const product = allProducts.filter((product) => product.title === transaction.product_name);
-      // console.log("isPlanExpired(product[0].validity, transaction.createdAt)", isPlanExpired(product[0].validity, transaction.createdAt));
       if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
         console.log("transaction._id", transaction._id);
         if (product[0].isHot) {
           toAddMoney += product[0].price
         }
-
-        // const deleteValue = await transactionModel.deleteOne({
-        //   _id: transaction._id
-        // })
-        // console.log(deleteValue);
       } else {
         console.log(product);
       }
@@ -339,13 +333,36 @@ const redeemBalance = async (req, res) => {
     });
   }
 };
+const addReferAmount = async (userReferCode) => {
+
+  console.log("userReferCode: ", userReferCode);
+  const settings = await Settings.findOne({
+    key: "refer_amount"
+  })
+  if (settings) {
+    console.log("settings", settings);
+    const user = await userModel.findOne({
+      referralCode: userReferCode
+    })
+    console.log("user", user);
+    if (user) {
+      console.log("user", user);
+      await userModel.updateOne({
+        _id: user._id
+      }, {
+        money: Number(user.money) + Number(settings.value)
+      })
+    }
+  }
+}
+
 
 const addMoneyToWallet = async (req, res) => {
   try {
     const { email, amount, transaction_id } = req.body;
     const user = await userModel.findOne({ email });
-    console.log("user.money", user.money, amount);
-    const toAdd = Number(user.money) + Number(amount)
+    console.log("user.money", user.rechargePoints, amount);
+    const toAdd = Number(user.rechargePoints ?? 0) + Number(amount)
 
     const model = await transactionModel.insertMany({
       userId: user._id,
@@ -354,13 +371,22 @@ const addMoneyToWallet = async (req, res) => {
       product_name: "ADDED_TO_WALLET",
     });
 
+    if (!user.isReferAmountAdded) {
+      await addReferAmount(user.userReferCode)
+    }
+
     console.log("model", model);
+    const settings = await Settings.findOne({
+      key: "refer_amount"
+    })
     const result = await userModel.updateOne(
       {
         _id: user._id,
       },
       {
-        money: toAdd,
+        rechargePoints: toAdd,
+        isReferAmountAdded: true,
+        money: !user.isReferAmountAdded ? Number(user.money) + Number(settings.value) : Number(user.money)
       }
     );
 
