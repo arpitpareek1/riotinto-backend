@@ -164,7 +164,7 @@ const changeStatus = async (req, res) => {
 
 const sendTransactionReq = async (req, res) => {
   try {
-    const { email, amount, transaction_id, product_name } = req.body;
+    const { email, amount, transaction_id, product_name, payment_mode } = req.body;
 
     if (!email || !transaction_id || !product_name || !amount) {
       res.status(500).json({
@@ -185,21 +185,33 @@ const sendTransactionReq = async (req, res) => {
     }
 
     let value = Number(user.rechargePoints) - Number(amount);
-
-    const upDatedUser = await userModel.updateOne(
-      {
-        _id: user._id,
-      },
-      {
-        rechargePoints: value,
-      }
-    );
+    let upDatedUser = null
+    if (payment_mode && payment_mode === "Recharge") {
+      upDatedUser = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          rechargePoints: value,
+        }
+      );
+    } else if (payment_mode && payment_mode === "Balance") {
+      upDatedUser = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          rechargePoints: value,
+        }
+      );
+    }
 
     const model = await transactionModel({
       userId: user._id,
       amount,
       transaction_id,
       product_name,
+      payment_method: "UPI"
     });
 
     const result = await model.save();
@@ -352,6 +364,15 @@ const addReferAmount = async (userReferCode) => {
       }, {
         money: Number(user.money) + Number(settings.value)
       })
+
+      const tra = {
+        userId: user._id,
+        amount: Number(settings.value),
+        transaction_id: "165446494848674786",
+        product_name: "REFER_TRANSACTION",
+        payment_method: "UPI"
+      }
+      await transactionModel.insertMany(tra);
     }
   }
 }
@@ -359,7 +380,7 @@ const addReferAmount = async (userReferCode) => {
 
 const addMoneyToWallet = async (req, res) => {
   try {
-    const { email, amount, transaction_id } = req.body;
+    const { email, amount, transaction_id, method } = req.body;
     const user = await userModel.findOne({ email });
     console.log("user.money", user.rechargePoints, amount);
     const toAdd = Number(user.rechargePoints ?? 0) + Number(amount)
@@ -367,8 +388,9 @@ const addMoneyToWallet = async (req, res) => {
     const model = await transactionModel.insertMany({
       userId: user._id,
       amount: Number(amount),
-      transaction_id: transaction_id ? transaction_id : "jhgflksdjlfaksdjbldksj",
-      product_name: "ADDED_TO_WALLET",
+      transaction_id: transaction_id ? transaction_id : "165446494848674786",
+      product_name: method === "LUCKY_SPIN_WIN" ? method : "ADDED_TO_WALLET",
+      payment_method: "UPI"
     });
 
     if (!user.isReferAmountAdded) {
@@ -497,6 +519,68 @@ const canUserBuyProduct = async (req, res) => {
 
 }
 
+const buyMoreChances = async (req, res) => {
+
+  try {
+    const { method, email } = req.body;
+    console.log(method, email);
+    const user = await userModel.findOne({
+      email
+    });
+    if (user) {
+      if (method) {
+        const settings = await Settings.findOne({
+          key: "get_spinner_chances_in"
+        })
+        console.log("settings", settings);
+        const transaction = {
+          userId: user._id,
+          amount: Number(settings.value ?? 100),
+          product_name: "GETTING_SPINNER_CHANCES",
+          transaction_id: new Date().getMilliseconds() + "5262462",
+          payment_method: method
+        }
+        const tran = await transactionModel.insertMany(transaction)
+        if (tran) {
+          let result = null
+          if (method === "Recharge") {
+            result = await userModel.updateOne(
+              {
+                _id: user._id,
+              },
+              {
+                rechargePoints: user.rechargePoints - Number(settings.value ?? 100)
+              }
+            );
+          } else if (method === "Balance") {
+            result = await userModel.updateOne(
+              {
+                _id: user._id,
+              },
+              {
+                money: user.money - Number(settings.value ?? 100)
+              }
+            );
+          }
+          console.log("result: ", result);
+        }
+      }
+
+    }
+    res.status(200).send({
+      success: true,
+      message: "Success"
+    });
+  } catch (error) {
+    console.log("error: ", error);
+    res.status(500).send({
+      success: false,
+      message: "Error in buyMoreChances",
+      error: error,
+    })
+  }
+}
+
 module.exports = {
   sendWithdrawReq,
   getAllWithDrawReqs,
@@ -507,5 +591,6 @@ module.exports = {
   addMoneyToWallet,
   getTransactionForUser,
   canUserBuyProduct,
-  getWithDrawReqs
+  getWithDrawReqs,
+  buyMoreChances
 };

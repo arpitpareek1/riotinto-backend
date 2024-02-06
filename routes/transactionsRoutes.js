@@ -10,7 +10,8 @@ const {
     addMoneyToWallet,
     getTransactionForUser,
     canUserBuyProduct,
-    getWithDrawReqs
+    getWithDrawReqs,
+    buyMoreChances
 } = require('../controllers/transactionsController');
 
 // //router object
@@ -31,6 +32,7 @@ router.post("/canUserBuyProduct", canUserBuyProduct);
 router.post("/addMoneyToWallet", addMoneyToWallet)
 router.post("/redeemBalance", redeemBalance)
 router.post("/getTransactionForUser", getTransactionForUser)
+router.post("/buyMoreChances", buyMoreChances)
 
 
 module.exports = router;
