@@ -183,7 +183,7 @@ const sendTransactionReq = async (req, res) => {
           _id: user._id,
         },
         {
-          rechargePoints:  Number((user.rechargePoints || 0)) - Number(amount),
+          rechargePoints: Number((user.rechargePoints || 0)) - Number(amount),
         }
       );
     } else if (payment_mode && payment_mode === "Balance" && Number((user.money || 0)) > Number(amount)) {
@@ -192,7 +192,7 @@ const sendTransactionReq = async (req, res) => {
           _id: user._id,
         },
         {
-          rechargePoints:  Number((user.money || 0)) - Number(amount),
+          rechargePoints: Number((user.money || 0)) - Number(amount),
         }
       );
     } else {
@@ -311,6 +311,13 @@ const redeemBalance = async (req, res) => {
     const data = await transactionModel.find({
       userId: user._id,
     });
+    if (!data.filter((obj) => (!["ADDED_TO_WALLET", "LUCKY_SPIN_WIN", "GETTING_SPINNER_CHANCES"].includes(obj.product_name))).length) {
+      res.status(201).json({
+        message: "To Redeem need to buy at least one product.",
+        status: false,
+      });
+      return;
+    }
 
     let todaysBonus = 0;
     const products = await Product.find();
@@ -342,16 +349,16 @@ const redeemBalance = async (req, res) => {
     });
   }
 };
+
 const addReferAmount = async (userReferCode) => {
 
   console.log("userReferCode: ", userReferCode);
   const settings = await Settings.findOne({
     key: "refer_amount"
   });
-  const settingForSecondReffer = await Settings.findOne({key: "refer_second_time"});
+  const settingForSecondRefer = await Settings.findOne({ key: "refer_second_time" });
 
-  if (settings && settingForSecondReffer) {
-    
+  if (settings && settingForSecondRefer) {
     console.log("settings", settings);
 
     const user = await userModel.findOne({
@@ -359,17 +366,18 @@ const addReferAmount = async (userReferCode) => {
     });
     console.log("user", user);
     if (user) {
-      const refferAmount = user.isRefered ? settingForSecondReffer.value : settings.value
+      const referAmount = user.isRefered ? settingForSecondRefer.value : settings.value
       console.log("user", user);
       await userModel.updateOne({
         _id: user._id
       }, {
-        rechargePoints: Number(user.rechargePoints || 0) + Number(refferAmount)
+        isRefered: true,
+        rechargePoints: Number(user.rechargePoints || 0) + Number(referAmount)
       });
 
       const tra = {
         userId: user._id,
-        amount: Number(refferAmount),
+        amount: Number(referAmount),
         transaction_id: "165446494848674786",
         product_name: "REFER_TRANSACTION",
         payment_method: "UPI"
@@ -378,7 +386,6 @@ const addReferAmount = async (userReferCode) => {
     }
   }
 };
-
 
 const addMoneyToWallet = async (req, res) => {
   try {
@@ -395,7 +402,7 @@ const addMoneyToWallet = async (req, res) => {
       payment_method: "UPI"
     });
 
-    if (!user.isReferAmountAdded) {
+    if (!user.isReferAmountAdded && user.userReferCode && method === "RECHARGE") {
       await addReferAmount(user.userReferCode);
     }
 
@@ -403,23 +410,36 @@ const addMoneyToWallet = async (req, res) => {
     const settings = await Settings.findOne({
       key: "refer_amount"
     });
-    const result = await userModel.updateOne(
-      {
-        _id: user._id,
-      },
-      {
-        rechargePoints: toAdd,
-        isReferAmountAdded: true,
-        money: !user.isReferAmountAdded ? Number(user.money) + Number(settings.value) : Number(user.money)
-      }
-    );
-
-    res.status(201).json({
-      message: "Success",
-      status: true,
-      data: result,
-    });
-
+    if (method === "RECHARGE") {
+      const result = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          rechargePoints: (!user.isReferAmountAdded && user.userReferCode && method === "RECHARGE") ? toAdd + Number(settings.value) : toAdd,
+          isReferAmountAdded: true,
+        }
+      );
+      res.status(201).json({
+        message: "Success",
+        status: true,
+        data: result,
+      });
+    } else {
+      const result = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          money: Number(user.money) + Number(amount)
+        }
+      );
+      res.status(201).json({
+        message: "Success",
+        status: true,
+        data: result,
+      });
+    }
   } catch (err) {
     console.log(err);
     res.status(500).send({
@@ -535,37 +555,58 @@ const buyMoreChances = async (req, res) => {
           key: "get_spinner_chances_in"
         });
         console.log("settings", settings);
-        const transaction = {
-          userId: user._id,
-          amount: Number(settings.value ?? 100),
-          product_name: "GETTING_SPINNER_CHANCES",
-          transaction_id: new Date().getMilliseconds() + "5262462",
-          payment_method: method
-        };
-        const tran = await transactionModel.insertMany(transaction);
-        if (tran) {
-          let result = null;
-          if (method === "Recharge") {
-            result = await userModel.updateOne(
-              {
-                _id: user._id,
-              },
-              {
-                rechargePoints: user.rechargePoints - Number(settings.value ?? 100)
-              }
-            );
-          } else if (method === "Balance") {
-            result = await userModel.updateOne(
-              {
-                _id: user._id,
-              },
-              {
-                money: user.money - Number(settings.value ?? 100)
-              }
-            );
-          }
-          console.log("result: ", result);
+        let result = null;
+        if (method === "Recharge" && Number(user.rechargePoints) >= Number(settings.value ?? 100)) {
+          result = await userModel.updateOne(
+            {
+              _id: user._id,
+            },
+            {
+              rechargePoints: user.rechargePoints - Number(settings.value ?? 100)
+            }
+          );
+          const transaction = {
+            userId: user._id,
+            amount: Number(settings.value ?? 100),
+            product_name: "GETTING_SPINNER_CHANCES",
+            transaction_id: new Date().getMilliseconds() + "5262462",
+            payment_method: method
+          };
+          const tran = await transactionModel.insertMany(transaction);
+        } else if (method === "Balance" && Number(user.money) >= Number(settings.value ?? 100)) {
+          result = await userModel.updateOne(
+            {
+              _id: user._id,
+            },
+            {
+              money: user.money - Number(settings.value ?? 100)
+            }
+          );
+          const transaction = {
+            userId: user._id,
+            amount: Number(settings.value ?? 100),
+            product_name: "GETTING_SPINNER_CHANCES",
+            transaction_id: new Date().getMilliseconds() + "5262462",
+            payment_method: method
+          };
+          const tran = await transactionModel.insertMany(transaction);
+        } else if (method === "UPI") {
+          const transaction = {
+            userId: user._id,
+            amount: Number(settings.value ?? 100),
+            product_name: "GETTING_SPINNER_CHANCES",
+            transaction_id: new Date().getMilliseconds() + "5262462",
+            payment_method: method
+          };
+          const tran = await transactionModel.insertMany(transaction);
+        } else {
+          res.status(200).send({
+            success: false,
+            message: "Don't have enough money"
+          });
+          return;
         }
+        console.log("result: ", result);
       }
 
     }
