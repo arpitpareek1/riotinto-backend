@@ -86,12 +86,12 @@ const getWithDrawReqs = async (req, res) => {
     console.log(email);
     const user = await userModel.findOne({
       email: email
-    })
+    });
     console.log(user);
     if (!user) {
       return res.status(200).send({
         message: "user not found"
-      })
+      });
     }
 
     const data = await withdrawalModel.find({
@@ -121,7 +121,7 @@ const changeStatus = async (req, res) => {
     if (status === "cancelled") {
       const transactionInfo = await withdrawalModel.findOne({
         _id: id
-      })
+      });
       console.log("tra", transactionInfo);
       if (transactionInfo && transactionInfo.userId) {
         const userInfo = await userModel.findOne({ _id: transactionInfo.userId });
@@ -165,7 +165,7 @@ const changeStatus = async (req, res) => {
 const sendTransactionReq = async (req, res) => {
   try {
     const { email, amount, transaction_id, product_name, payment_mode } = req.body;
-
+    console.log("req.body", req.body);
     if (!email || !transaction_id || !product_name || !amount) {
       res.status(500).json({
         message: "Please enter your payment info",
@@ -175,35 +175,32 @@ const sendTransactionReq = async (req, res) => {
     }
 
     const user = await userModel.findOne({ email });
-
-    if (user && user.rechargePoints < amount) {
+    // let value = Number((user.rechargePoints || 0)) - Number(amount);
+    let upDatedUser = null;
+    if (payment_mode && payment_mode === "Recharge" && Number((user.rechargePoints || 0)) > Number(amount)) {
+      upDatedUser = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          rechargePoints:  Number((user.rechargePoints || 0)) - Number(amount),
+        }
+      );
+    } else if (payment_mode && payment_mode === "Balance" && Number((user.money || 0)) > Number(amount)) {
+      upDatedUser = await userModel.updateOne(
+        {
+          _id: user._id,
+        },
+        {
+          rechargePoints:  Number((user.money || 0)) - Number(amount),
+        }
+      );
+    } else {
       res.status(201).json({
         message: "Your balance is less then the price.",
         status: false,
       });
       return;
-    }
-
-    let value = Number(user.rechargePoints) - Number(amount);
-    let upDatedUser = null
-    if (payment_mode && payment_mode === "Recharge") {
-      upDatedUser = await userModel.updateOne(
-        {
-          _id: user._id,
-        },
-        {
-          rechargePoints: value,
-        }
-      );
-    } else if (payment_mode && payment_mode === "Balance") {
-      upDatedUser = await userModel.updateOne(
-        {
-          _id: user._id,
-        },
-        {
-          rechargePoints: value,
-        }
-      );
     }
 
     const model = await transactionModel({
@@ -266,12 +263,12 @@ async function removeExpiredProducts(id) {
   if (allTransitions && allTransitions.length) {
     let toAddMoney = 0;
     for (let i = 0; i < allTransitions.length; i++) {
-      const transaction = allTransitions[i]
+      const transaction = allTransitions[i];
       const product = allProducts.filter((product) => product.title === transaction.product_name);
       if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
         console.log("transaction._id", transaction._id);
         if (product[0].isHot) {
-          toAddMoney += product[0].price
+          toAddMoney += product[0].price;
         }
       } else {
         console.log(product);
@@ -287,7 +284,7 @@ async function removeExpiredProducts(id) {
           _id: id
         }, {
           money: Number(user.money) + Number(toAddMoney)
-        })
+        });
       }
     }
   }
@@ -307,7 +304,7 @@ const redeemBalance = async (req, res) => {
           message: "You have already redeem the points in 24 hours. please try after some time.",
           status: false,
         });
-        return
+        return;
       }
     }
 
@@ -319,7 +316,7 @@ const redeemBalance = async (req, res) => {
     const products = await Product.find();
     console.log(products);
     for (let i = 0; i < data.length; i++) {
-      const traProduct = products.filter((product) => !product.isHot && product.title === data[i].product_name)
+      const traProduct = products.filter((product) => !product.isHot && product.title === data[i].product_name);
       if (traProduct.length) {
         todaysBonus += Number(traProduct[0].dailyIncome);
       }
@@ -350,12 +347,12 @@ const addReferAmount = async (userReferCode) => {
   console.log("userReferCode: ", userReferCode);
   const settings = await Settings.findOne({
     key: "refer_amount"
-  })
+  });
   if (settings) {
     console.log("settings", settings);
     const user = await userModel.findOne({
       referralCode: userReferCode
-    })
+    });
     console.log("user", user);
     if (user) {
       console.log("user", user);
@@ -363,7 +360,7 @@ const addReferAmount = async (userReferCode) => {
         _id: user._id
       }, {
         money: Number(user.money) + Number(settings.value)
-      })
+      });
 
       const tra = {
         userId: user._id,
@@ -371,11 +368,11 @@ const addReferAmount = async (userReferCode) => {
         transaction_id: "165446494848674786",
         product_name: "REFER_TRANSACTION",
         payment_method: "UPI"
-      }
+      };
       await transactionModel.insertMany(tra);
     }
   }
-}
+};
 
 
 const addMoneyToWallet = async (req, res) => {
@@ -383,7 +380,7 @@ const addMoneyToWallet = async (req, res) => {
     const { email, amount, transaction_id, method } = req.body;
     const user = await userModel.findOne({ email });
     console.log("user.money", user.rechargePoints, amount);
-    const toAdd = Number(user.rechargePoints ?? 0) + Number(amount)
+    const toAdd = Number(user.rechargePoints ?? 0) + Number(amount);
 
     const model = await transactionModel.insertMany({
       userId: user._id,
@@ -394,13 +391,13 @@ const addMoneyToWallet = async (req, res) => {
     });
 
     if (!user.isReferAmountAdded) {
-      await addReferAmount(user.userReferCode)
+      await addReferAmount(user.userReferCode);
     }
 
     console.log("model", model);
     const settings = await Settings.findOne({
       key: "refer_amount"
-    })
+    });
     const result = await userModel.updateOne(
       {
         _id: user._id,
@@ -430,7 +427,7 @@ const addMoneyToWallet = async (req, res) => {
 
 const getTransactionForUser = async (req, res) => {
   try {
-    const { email } = req.body
+    const { email } = req.body;
     const user = await userModel.findOne({
       email
     });
@@ -439,7 +436,7 @@ const getTransactionForUser = async (req, res) => {
     if (user && user._id) {
       const data = await transactionModel.find({
         userId: user._id
-      })
+      });
       console.log("data", data);
       if (data) {
         res.status(200).send({
@@ -468,7 +465,7 @@ const getTransactionForUser = async (req, res) => {
       error: error,
     });
   }
-}
+};
 
 const canUserBuyProduct = async (req, res) => {
   try {
@@ -478,7 +475,7 @@ const canUserBuyProduct = async (req, res) => {
         success: true,
         message: "Can buy this product"
       });
-    }
+    };
     const user = await userModel.findOne({
       email
     });
@@ -501,13 +498,13 @@ const canUserBuyProduct = async (req, res) => {
               message: "You Cannot purchase this product as you have exceeded the limit for purchases"
             });
           } else {
-            sendOk()
+            sendOk();
           }
         } else {
           console.log("Product not found");
         }
       } else {
-        sendOk()
+        sendOk();
         console.log("No transaction data found");
       }
     } else {
@@ -517,7 +514,7 @@ const canUserBuyProduct = async (req, res) => {
     console.error("Error:", e);
   }
 
-}
+};
 
 const buyMoreChances = async (req, res) => {
 
@@ -531,7 +528,7 @@ const buyMoreChances = async (req, res) => {
       if (method) {
         const settings = await Settings.findOne({
           key: "get_spinner_chances_in"
-        })
+        });
         console.log("settings", settings);
         const transaction = {
           userId: user._id,
@@ -539,10 +536,10 @@ const buyMoreChances = async (req, res) => {
           product_name: "GETTING_SPINNER_CHANCES",
           transaction_id: new Date().getMilliseconds() + "5262462",
           payment_method: method
-        }
-        const tran = await transactionModel.insertMany(transaction)
+        };
+        const tran = await transactionModel.insertMany(transaction);
         if (tran) {
-          let result = null
+          let result = null;
           if (method === "Recharge") {
             result = await userModel.updateOne(
               {
@@ -577,9 +574,9 @@ const buyMoreChances = async (req, res) => {
       success: false,
       message: "Error in buyMoreChances",
       error: error,
-    })
+    });
   }
-}
+};
 
 module.exports = {
   sendWithdrawReq,
