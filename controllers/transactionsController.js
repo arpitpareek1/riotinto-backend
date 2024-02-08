@@ -348,23 +348,28 @@ const addReferAmount = async (userReferCode) => {
   const settings = await Settings.findOne({
     key: "refer_amount"
   });
-  if (settings) {
+  const settingForSecondReffer = await Settings.findOne({key: "refer_second_time"});
+
+  if (settings && settingForSecondReffer) {
+    
     console.log("settings", settings);
+
     const user = await userModel.findOne({
       referralCode: userReferCode
     });
     console.log("user", user);
     if (user) {
+      const refferAmount = user.isRefered ? settingForSecondReffer.value : settings.value
       console.log("user", user);
       await userModel.updateOne({
         _id: user._id
       }, {
-        money: Number(user.money) + Number(settings.value)
+        rechargePoints: Number(user.rechargePoints || 0) + Number(refferAmount)
       });
 
       const tra = {
         userId: user._id,
-        amount: Number(settings.value),
+        amount: Number(refferAmount),
         transaction_id: "165446494848674786",
         product_name: "REFER_TRANSACTION",
         payment_method: "UPI"

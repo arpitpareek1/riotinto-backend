@@ -28,9 +28,10 @@ const userSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
-    rechargePoints:{
+    rechargePoints: {
       type: Number,
       required: true,
+      default: 0
     },
     role: {
       type: Number,
@@ -44,10 +45,10 @@ const userSchema = new mongoose.Schema(
       type: String,
       unique: true,
     },
-    isReferAmountAdded: { 
-      type:Boolean, 
+    isReferAmountAdded: {
+      type: Boolean,
       default: false
-     },
+    },
     isRefered: {
       type: Boolean,
       default: false,
