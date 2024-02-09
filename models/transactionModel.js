@@ -60,7 +60,13 @@ const transactionSchema = new mongoose.Schema(
     payment_method: {
       type: String,
       required: true,
-    }
+    },
+    status: {
+      type: String,
+      required: true,
+      enum: ["in_progress", "expired"],
+      default: "in_progress",
+    },
   },
   { timestamps: true }
 );

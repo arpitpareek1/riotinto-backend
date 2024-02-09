@@ -265,11 +265,18 @@ async function removeExpiredProducts(id) {
     for (let i = 0; i < allTransitions.length; i++) {
       const transaction = allTransitions[i];
       const product = allProducts.filter((product) => product.title === transaction.product_name);
-      if (product.length && isPlanExpired(product[0].validity, transaction.createdAt)) {
-        console.log("transaction._id", transaction._id);
+      if (product.length && (transaction.status === "in_progress" || !transaction.status) && isPlanExpired(product[0].validity, transaction.createdAt)) {
         if (product[0].isHot) {
           toAddMoney += product[0].price;
         }
+        const update = await transactionModel.updateOne(
+          { _id: transaction._id },
+          {
+            $set: {
+              status: "expired",
+            },
+          }
+        );
       } else {
         console.log(product);
       }
@@ -366,7 +373,7 @@ const addReferAmount = async (userReferCode) => {
     });
     console.log("user", user);
     if (user) {
-      const referAmount = user.isRefered ? settingForSecondRefer.value : settings.value
+      const referAmount = user.isRefered ? settingForSecondRefer.value : settings.value;
       console.log("user", user);
       await userModel.updateOne({
         _id: user._id
