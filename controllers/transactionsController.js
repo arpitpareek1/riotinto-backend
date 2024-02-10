@@ -177,7 +177,7 @@ const sendTransactionReq = async (req, res) => {
     const user = await userModel.findOne({ email });
     // let value = Number((user.rechargePoints || 0)) - Number(amount);
     let upDatedUser = null;
-    if (payment_mode && payment_mode === "Recharge" && Number((user.rechargePoints || 0)) > Number(amount)) {
+    if (payment_mode && payment_mode === "Recharge" && Number((user.rechargePoints || 0)) >= Number(amount)) {
       upDatedUser = await userModel.updateOne(
         {
           _id: user._id,
@@ -186,7 +186,7 @@ const sendTransactionReq = async (req, res) => {
           rechargePoints: Number((user.rechargePoints || 0)) - Number(amount),
         }
       );
-    } else if (payment_mode && payment_mode === "Balance" && Number((user.money || 0)) > Number(amount)) {
+    } else if (payment_mode && payment_mode === "Balance" && Number((user.money || 0)) >= Number(amount)) {
       upDatedUser = await userModel.updateOne(
         {
           _id: user._id,
