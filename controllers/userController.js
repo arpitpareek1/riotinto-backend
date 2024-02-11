@@ -56,7 +56,7 @@ const getRefferForUser = async (req, res) => {
         const allRefferdUsers = await userModel.find({
             referredBy: userInfo._id
         })
-        console.log("allRefferdUsers", allRefferdUsers);
+
         res.status(200).json({
             status: true,
             data: allRefferdUsers
@@ -69,12 +69,10 @@ const getRefferForUser = async (req, res) => {
             error: err,
         });
     }
-
 }
 
 const getAllData = async (req, res) => {
     try {
-
         const userInfo = await userModel.find();
         const transactionsInfo = await transactionModel.find();
         const withdrawalInfo = await withdrawalModel.find();

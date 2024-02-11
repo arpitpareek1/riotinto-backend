@@ -1,17 +1,8 @@
 const userModel = require("../models/userModel.js");
 const shortid = require("shortid");
-const {
-  hashPassword,
-  generateOTP,
-} = require("../helpers/authHelper.js");
+const { hashPassword, generateOTP } = require("../helpers/authHelper.js");
 const JWT = require("jsonwebtoken");
-// const Settings = require("../models/settings.js");
 const sdk = require('api')('@telesign-enterprise/v1.0#55lb030lqba2f1f');
-
-
-const accountSid = "ACed105a8cab8085c03bd58cfca1d3e48c";
-const authToken = "f7614b8428cc4d945e0e992af2647b98";
-const serviceSid = "VAc5593ff31f6aff02ab4503d7d3e818c4";
 
 const registerController = async (req, res) => {
   try {
@@ -49,14 +40,6 @@ const registerController = async (req, res) => {
     let referredByUser = null;
     if (userReferCode) {
       referredByUser = await userModel.findOne({ referralCode: userReferCode });
-      // if (referredByUser) {
-      //   settings = await Settings.findOne({
-      //     key: "refer_amount"
-      //   });
-      //   if (settings && settings.value) {
-      //     const p = await updateUserMoney(referredByUser.email, settings.value);
-      //   }
-      // }
     }
 
     const newUser = new userModel({
@@ -68,7 +51,7 @@ const registerController = async (req, res) => {
       money: 0,
       referredBy: referredByUser ? referredByUser._id : null,
       referralCode: shortid.generate(),
-      rechargePoints:0,
+      rechargePoints: 0,
       userReferCode,
     });
 
@@ -87,34 +70,63 @@ const registerController = async (req, res) => {
   }
 };
 
-const updateUserMoney = async (UserEmail, refferAmount) => {
-  const referredByUser = await userModel.findOne({ email: UserEmail });
-
-  const newMoney = +referredByUser.money + (
-    referredByUser.isRefered ?
-      50 :
-      Number(refferAmount)
-  );
-  console.log(newMoney);
-  userModel.updateOne(
-    { email: UserEmail },
-    {
-      $set: {
-        money: Number(newMoney),
-        isRefered: true,
-      },
-    },
-    (err, result) => {
-      if (err) {
-        console.error(err);
-      } else {
-        console.log(`Money updated successfully for user with ID`, result);
-      }
-    }
-  );
+const createErrorResponse = (res, status, message) => {
+  return res.status(status).json({ error: message });
 };
 
-//POST LOGIN
+const updateUserController = async (req, res) => {
+  try {
+    const { _id, name, email, password, phone, address, money, rechargePoints, referralCode } = req.body;
+    if (!_id) {
+      return createErrorResponse(res, 200, "User ID is required");
+    }
+
+    const userInfo = await userModel.findById(_id);
+    if (!userInfo) {
+      return createErrorResponse(res, 200, "User not found");
+    }
+    console.log(req.body);
+    const missingFields = [];
+    if (!name) missingFields.push("Name");
+    if (!email) missingFields.push("Email");
+    if (!password) missingFields.push("Password");
+    if (!phone) missingFields.push("Phone");
+    if (!address) missingFields.push("Address");
+    if (money === undefined || money < 0) missingFields.push("Balance");
+    if (rechargePoints === undefined || rechargePoints < 0) missingFields.push("Deposit Points");
+
+    if (missingFields.length > 0) {
+      const errorMessage = `The following fields are required: ${missingFields.join(", ")}`;
+      return createErrorResponse(res, 200, errorMessage);
+    }
+    let user = {};
+    user.name = name;
+    user.email = email;
+    user.password = password;
+    user.phone = phone;
+    user.address = address;
+    user.money = Number(money);
+    user.referralCode = referralCode;
+    user.rechargePoints = Number(rechargePoints)
+    user.isNew = false;
+
+    console.log(user);
+    const updatedUser = await userModel.updateOne(
+      { _id: _id },
+      {
+        $set: { ...user }
+      });
+
+    res.status(200).json({
+      message: "User updated successfully",
+      user: updatedUser,
+    });
+  } catch (error) {
+    console.error(error);
+    return createErrorResponse(res, 200, "Something went wrong while updating user");
+  }
+};
+
 const loginController = async (req, res) => {
   try {
     const { phone, password } = req.body;
@@ -159,7 +171,6 @@ const loginController = async (req, res) => {
   }
 };
 
-//forgotPasswordController
 const forgotPasswordController = async (req, res) => {
   try {
     const { email, answer, newPassword } = req.body;
@@ -197,7 +208,6 @@ const forgotPasswordController = async (req, res) => {
   }
 };
 
-//update profile
 const updateProfileController = async (req, res) => {
   try {
     const { name, email, password, address, phone } = req.body;
@@ -247,29 +257,11 @@ const sendOtp = async (req, res) => {
   }
 };
 
-const verifyOtp = async (req, res) => {
-  const { phoneNumber, code } = req.body;
-  try {
-    const client = require('twilio')(accountSid, authToken);
-    const check = await client.verify.v2.services(serviceSid).verificationChecks.create({
-      to: "+91" + phoneNumber,
-      code,
-    })
-      .then(verification => {
-        res.json({ status: true, verification });
-      })
-      .catch(err => res.json({ status: false, error: err.message }));
-
-  } catch (error) {
-    res.json({ status: false, error: error.message });
-  }
-};
-
 module.exports = {
-  verifyOtp,
   sendOtp,
   registerController,
   loginController,
   forgotPasswordController,
   updateProfileController,
+  updateUserController
 };

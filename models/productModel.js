@@ -1,7 +1,4 @@
-// Product.js
-
 const mongoose = require('mongoose');
-
 const productSchema = new mongoose.Schema({
   imageSource: { type: String, required: true },
   link: { type: String, required: true },
@@ -13,7 +10,5 @@ const productSchema = new mongoose.Schema({
   desc: { type: String, required: true },
   isHot: { type: Boolean, require: true, default: false }
 });
-
 const Product = mongoose.model('Product', productSchema);
-
 module.exports = Product;

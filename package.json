@@ -1,7 +1,7 @@
 {
-  "name": "ecommerce-app-2023",
+  "name": "app-2024",
   "version": "1.0.0",
-  "description": "ecommerce rest api",
+  "description": "----------nn---------",
   "main": "server.js",
   "scripts": {
     "start": "nodemon app.js",
@@ -10,7 +10,7 @@
     "dev": "concurrently \"npm run server\" \"npm run client\""
   },
   "keywords": [],
-  "author": "Ronak",
+  "author": "FSD",
   "license": "MIT",
   "dependencies": {
     "api": "^6.1.1",

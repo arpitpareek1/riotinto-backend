@@ -1,6 +1,5 @@
 const mongoose = require("mongoose");
 
-// Withdrawal Schema
 const withdrawalSchema = new mongoose.Schema(
   {
     userId: {
@@ -37,7 +36,6 @@ const withdrawalSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-// Transaction Schema
 const transactionSchema = new mongoose.Schema(
   {
     userId: {

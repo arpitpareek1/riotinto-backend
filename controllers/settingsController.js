@@ -1,7 +1,5 @@
-// controllers/settingsController.js
 const Settings = require('../models/settings');
 
-// Create a new setting
 const createSetting = async (key, value) => {
   try {
     const setting = await Settings.create({ key, value });
@@ -11,7 +9,6 @@ const createSetting = async (key, value) => {
   }
 };
 
-// Get all settings
 const getAllSettings = async () => {
   try {
     const settings = await Settings.find();
@@ -21,7 +18,6 @@ const getAllSettings = async () => {
   }
 };
 
-// Get a specific setting by key
 const getSettingByKey = async (key) => {
   try {
     const setting = await Settings.findOne({ key });
@@ -31,7 +27,6 @@ const getSettingByKey = async (key) => {
   }
 };
 
-// Update a setting by key
 const updateSettingByKey = async (key, newValue) => {
   try {
     const setting = await Settings.findOneAndUpdate(
@@ -45,7 +40,6 @@ const updateSettingByKey = async (key, newValue) => {
   }
 };
 
-// Delete a setting by key
 const deleteSettingByKey = async (key) => {
   try {
     const result = await Settings.deleteOne({ key });

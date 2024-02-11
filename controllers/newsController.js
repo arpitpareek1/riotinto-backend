@@ -29,14 +29,10 @@ const validateAnnouncement = (announcement) => {
 };
 
 const isValidDate = (dateString) => {
-    // Implement your date validation logic here
-    // For simplicity, assuming any non-empty string is valid in this example
     return !!dateString;
 };
 
 const isValidUrl = (url) => {
-    // Implement your URL validation logic here
-    // For simplicity, assuming any non-empty string is valid in this example
     return !!url;
 };
 

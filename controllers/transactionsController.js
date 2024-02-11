@@ -175,7 +175,6 @@ const sendTransactionReq = async (req, res) => {
     }
 
     const user = await userModel.findOne({ email });
-    // let value = Number((user.rechargePoints || 0)) - Number(amount);
     let upDatedUser = null;
     if (payment_mode && payment_mode === "Recharge" && Number((user.rechargePoints || 0)) >= Number(amount)) {
       upDatedUser = await userModel.updateOne(

@@ -1,9 +1,6 @@
-// routes/settingsRoutes.js
 const express = require('express');
 const settingsController = require('../controllers/settingsController');
-
 const router = express.Router();
-// Create a new setting
 router.post('/insert', async (req, res) => {
     const { key, value } = req.body;
     try {
@@ -13,8 +10,6 @@ router.post('/insert', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-// Get all settings
 router.get('/getAll', async (req, res) => {
     try {
         const settings = await settingsController.getAllSettings();
@@ -23,9 +18,6 @@ router.get('/getAll', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-
-// Update a setting by key
 router.put('/update', async (req, res) => {
     const { key, value } = req.body;
     try {
@@ -39,6 +31,4 @@ router.put('/update', async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-
-
 module.exports = router;
