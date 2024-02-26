@@ -5,7 +5,7 @@ provider:
   runtime: nodejs16.x # Node JS version
   memorySize: 512
   timeout: 30
-  stage: ${opt:stage, 'development'} # serverless deploy --stage development/uat
+  stage: ${opt:stage, 'development'} # serverless deploy --stage development
   environment:
     NODE_ENV: ${opt:stage, self:provider.stage, 'development'}
   region: ap-south-1 # AWS region   # new profile

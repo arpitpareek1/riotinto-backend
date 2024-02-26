@@ -24,7 +24,28 @@ const sendWithdrawReq = async (req, res) => {
         message: "Didn't have Enough balance",
       });
     }
-    console.log("user", user);
+
+    const allUserWithdraws = await withdrawalModel.find({
+      userId: user._id
+    })
+
+    const today = new Date();
+    const startOfWeek = new Date(today.getFullYear(), today.getMonth(), today.getDate() - today.getDay());
+
+    let requestsThisWeek = 0;
+
+    allUserWithdraws.forEach(request => {
+      if (new Date(request.createdAt) >= startOfWeek) {
+        requestsThisWeek++;
+      }
+    });
+
+    if (requestsThisWeek > 3) {
+      return res.status(200).json({
+        success: false,
+        message: "You have already requested more then 3 times. Please try next week!",
+      });
+    }
 
     await userModel.updateOne(
       { _id: user._id },
